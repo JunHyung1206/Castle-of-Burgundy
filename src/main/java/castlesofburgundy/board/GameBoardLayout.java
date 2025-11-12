@@ -7,10 +7,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class GameBoardLayout {
-    private final List<SectionLayout> sections;
-    private final int marketSlots;
-    private final int phaseSlots;
-    private final int roundSlots;
+    private final List<SectionLayout> sections;  // 각 섹션에 대한 타입
+    private final int marketSlots;  // 시장의 타일 개수
+    private final int phaseSlots;  // 페이즈 개수
+    private final int roundSlots;  // 라운드 개수
 
     public GameBoardLayout() {
         sections = List.of(

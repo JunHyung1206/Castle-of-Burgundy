@@ -45,4 +45,57 @@ public class BoardState {
     public int size() {
         return placed.size();
     }
+
+    public void fillAllFromSupply(TileSupplier supply) {
+        Objects.requireNonNull(supply, "supply");
+        placed.clear();
+        for (BoardSlot slot : layout.asSlots()) {
+            supply.draw(slot.getAllowedType()).ifPresent(tile -> placed.put(slot, tile));
+        }
+    }
+
+    /**
+     * (옵션) 비어있는 칸만 채우고 싶다면 이 메서드를 사용
+     */
+    public void fillEmptyFromSupply(TileSupplier supply) {
+        Objects.requireNonNull(supply, "supply");
+        for (BoardSlot slot : layout.asSlots()) {
+            if (!placed.containsKey(slot)) {
+                supply.draw(slot.getAllowedType()).ifPresent(tile -> placed.put(slot, tile));
+            }
+        }
+    }
+
+    /**
+     * 2) 하나 없애기
+     */
+    public Optional<Tile> removeAt(BoardSlot slot) {
+        return Optional.ofNullable(placed.remove(slot));
+    }
+
+    /**
+     * 전체 없애기
+     */
+    public List<Tile> removeAll() {
+        List<Tile> removed = new ArrayList<>(placed.values());
+        placed.clear();
+        return removed;
+    }
+
+
+    public Optional<Tile> get(BoardSlot slot) {
+        return Optional.ofNullable(placed.get(slot));
+    }
+
+    public boolean isFilled(BoardSlot slot) {
+        return placed.containsKey(slot);
+    }
+
+    public Map<BoardSlot, Tile> snapshot() {
+        return Collections.unmodifiableMap(placed);
+    }
+
+    public GameBoardLayout layout() {
+        return layout;
+    }
 }

@@ -1,7 +1,6 @@
 package castlesofburgundy.view;
 
 import castlesofburgundy.board.*;
-import castlesofburgundy.section.SectionBoard;
 import castlesofburgundy.tile.Tile;
 
 import java.util.*;
@@ -48,7 +47,7 @@ public final class GameBoardConsoleView {
                     """;
 
 
-    public static String render(GameBoardLayout layout, SectionBoard sectionBoard) {
+    public static String render(GameBoardLayout layout, BoardState boardState) {
         StringBuilder sb = new StringBuilder();
         sb.append("=== Market Board  ===\n");
 
@@ -56,7 +55,7 @@ public final class GameBoardConsoleView {
         for (SectionLayout s : layout.getSections()) byId.put(s.getSectionId(), s);
 
         int[] order = {1, 2, 3, 4, 5, 6};
-        Map<BoardSlot, Tile> snap = sectionBoard.snapshot();
+        Map<BoardSlot, Tile> snap = boardState.snapshot();
 
         // 섹션 박스 생성
         List<List<String>> boxes = new ArrayList<>();
@@ -95,13 +94,13 @@ public final class GameBoardConsoleView {
             if (t != null) {
                 String inner = AsciiUtils.shortType(t.type());
                 String colored = COLORIZE ? AsciiUtils.colorizeInner(inner, t.type(), true) : inner;
-                placedStr = padVisible(colored, COL_W);
+                placedStr = padVisible(colored+  t.id(), COL_W);
             } else {
                 String empty = COLORIZE ? AsciiUtils.FG_GRAY + "--" + AsciiUtils.RESET : "--";
                 placedStr = padVisible(empty, COL_W);
             }
 
-            String row = "|" + idx + "|" + " " + placedStr + " " + "|";
+            String row = "|" + idx + "|" + " " + placedStr + " "  + "|";
             out.add(padRight(row, BOX_W));
         }
         out.add(padRight(border, BOX_W));

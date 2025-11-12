@@ -1,12 +1,12 @@
 package castlesofburgundy.core;
 
+import castlesofburgundy.board.BoardState;
 import castlesofburgundy.board.GameBoardLayout;
-import castlesofburgundy.section.SectionBoard;
-import castlesofburgundy.tile.TileSupply;
+import castlesofburgundy.board.TileSupplier;
 
 public record GameContext(
         long seed,
         GameBoardLayout layout,
-        SectionBoard sectionBoard,
-        TileSupply supply
+        BoardState boardState,
+        TileSupplier tileSupplier
 ) {}

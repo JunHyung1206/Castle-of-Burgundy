@@ -2,7 +2,7 @@ package castlesofburgundy.tile;
 
 import java.util.Map;
 
-public record BaseTile(TileType type, Map<String, Object> props) implements Tile {
+public record BaseTile(TileType type, Map<String, Object> props, int id) implements Tile {
     public BaseTile {
         if (type == null) {
             throw new IllegalArgumentException("type");
@@ -15,7 +15,7 @@ public record BaseTile(TileType type, Map<String, Object> props) implements Tile
 
     }
 
-    public static BaseTile of(TileType type) {
-        return new BaseTile(type, Map.of());
+    public static BaseTile of(TileType type, int id) {
+        return new BaseTile(type, Map.of(), id);
     }
 }

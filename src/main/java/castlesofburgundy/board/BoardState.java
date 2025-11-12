@@ -16,16 +16,9 @@ public class BoardState {
         this.layout = Objects.requireNonNull(layout);
     }
 
-    public boolean isEmpty(BoardSlot slot) {
-        return !placed.containsKey(slot);
-    }
-
     public int size() {
         return placed.size();
     }
-
-    // 허용 타입 조회 API 추가
-
 
     public void fillAllFromSupply(TileSupplier supply) {
         Objects.requireNonNull(supply, "supply");
@@ -33,22 +26,14 @@ public class BoardState {
         for (BoardSlot slot : layout.asSlots()) {
             TileType type = layout.getAllowedType(slot);
             Optional<Tile> drawn = supply.draw(type);
-            if (drawn.isPresent()) {
-                placed.put(slot, drawn.get());
-            }
+            drawn.ifPresent(tile -> placed.put(slot, tile));
         }
     }
 
-    /**
-     * 전체 없애기
-     */
     public void removeAll() {
         placed.clear();
     }
 
-    /**
-     * 하나 없애기
-     */
     public Optional<Tile> removeAt(BoardSlot slot) {
         return Optional.ofNullable(placed.remove(slot));
     }
@@ -61,11 +46,15 @@ public class BoardState {
         return placed.containsKey(slot);
     }
 
+    public boolean isEmpty(BoardSlot slot) {
+        return !isFilled(slot);
+    }
+
     public Map<BoardSlot, Tile> snapshot() {
         return Collections.unmodifiableMap(placed);
     }
 
-    public GameBoardLayout layout() {
+    public GameBoardLayout getLayout() {
         return layout;
     }
 }

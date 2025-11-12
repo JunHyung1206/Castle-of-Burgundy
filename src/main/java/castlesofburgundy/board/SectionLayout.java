@@ -33,6 +33,4 @@ public class SectionLayout {
     public List<TileType> getSlotTypes() {
         return slotTypes;
     }
-
-
 }

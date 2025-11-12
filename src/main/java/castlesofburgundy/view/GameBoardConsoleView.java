@@ -60,7 +60,8 @@ public final class GameBoardConsoleView {
         // 섹션 박스 생성
         List<List<String>> boxes = new ArrayList<>();
         for (int secId : order) {
-            boxes.add(renderSectionBox(byId.get(secId), snap));
+            SectionLayout sec = layout.getSection(secId);
+            boxes.add(renderSectionBox(layout, sec, snap));
         }
 
         // 가로로 병합
@@ -78,7 +79,7 @@ public final class GameBoardConsoleView {
 
     // ─────────────────────────────────────────────────────────────
 
-    private static List<String> renderSectionBox(SectionLayout sec, Map<BoardSlot, Tile> grid) {
+    private static List<String> renderSectionBox(GameBoardLayout layout, SectionLayout sec, Map<BoardSlot, Tile> grid) {
         List<String> out = new ArrayList<>();
         String border = "+---+------------+";
         out.add(padRight(border, BOX_W));
@@ -86,7 +87,7 @@ public final class GameBoardConsoleView {
         out.add(padRight(border, BOX_W));
 
         for (int i = 0; i < sec.getSlotTypes().size(); i++) {
-            BoardSlot slot = new BoardSlot(sec.getSectionId(), i, sec.getSlotTypes().get(i));
+            BoardSlot slot = layout.getSlot(sec.getSectionId(), i);
 
             String idx = String.format("%3d", i);
             String placedStr;
@@ -94,10 +95,10 @@ public final class GameBoardConsoleView {
             if (t != null) {
                 String inner = AsciiUtils.shortType(t.type());
                 String colored = COLORIZE ? AsciiUtils.colorizeInner(inner, t.type(), true) : inner;
-                placedStr = padVisible(colored+  t.id(), COL_W);
+                placedStr = padRight(colored+  t.id(), COL_W);
             } else {
                 String empty = COLORIZE ? AsciiUtils.FG_GRAY + "--" + AsciiUtils.RESET : "--";
-                placedStr = padVisible(empty, COL_W);
+                placedStr = padRight(empty, COL_W);
             }
 
             String row = "|" + idx + "|" + " " + placedStr + " "  + "|";
@@ -108,12 +109,6 @@ public final class GameBoardConsoleView {
     }
 
     private static String padRight(String s, int width) {
-        int vis = AsciiUtils.visibleLen(s);
-        if (vis >= width) return s;
-        return s + " ".repeat(width - vis);
-    }
-
-    private static String padVisible(String s, int width) {
         int vis = AsciiUtils.visibleLen(s);
         if (vis >= width) return s;
         return s + " ".repeat(width - vis);

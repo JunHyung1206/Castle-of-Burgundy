@@ -22,7 +22,7 @@ public class BoardState {
 
     public boolean canPlace(BoardSlot slot, Tile tile) {
         // 1) 슬롯 존재 & 비어있음
-        boolean exists = layout.asSlots().contains(slot);
+        boolean exists = layout.contains(slot);
         if (!exists || !isEmpty(slot)) {
             return false;
         }

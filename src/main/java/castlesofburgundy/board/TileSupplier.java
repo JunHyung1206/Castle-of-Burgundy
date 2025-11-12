@@ -1,17 +1,21 @@
-package castlesofburgundy.tile;
+package castlesofburgundy.board;
+
+import castlesofburgundy.tile.BaseTile;
+import castlesofburgundy.tile.Tile;
+import castlesofburgundy.tile.TileType;
 
 import java.util.*;
 
-public class TileSupply {
+public class TileSupplier {
     private final EnumMap<TileType, Deque<Tile>> pool = new EnumMap<>(TileType.class);
 
-    public TileSupply(Map<TileType, Integer> counts, long seed) {
+    public TileSupplier(Map<TileType, Integer> counts, long seed) {
         Random random = new Random(seed);
         for (TileType t : TileType.values()) {
             int n = counts.getOrDefault(t, 0);
             List<Tile> tmp = new ArrayList<>(n);
             for (int i = 0; i < n; i++) {
-                tmp.add(BaseTile.of(t));
+                tmp.add(BaseTile.of(t, i));
             }
             Collections.shuffle(tmp, random);
             pool.put(t, new ArrayDeque<>(tmp));

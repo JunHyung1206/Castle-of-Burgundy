@@ -11,9 +11,8 @@ import java.util.*;
 public final class BoardSlot {
     private final int sectionId; // 1..6
     private final int index;     // 0..3 (섹션 내 칸 순번)
-    private final TileType allowedType;
 
-    public BoardSlot(int sectionId, int index, TileType allowedType) {
+    public BoardSlot(int sectionId, int index) {
         if (sectionId < 1 || sectionId > 6) {
             throw new IllegalArgumentException("섹션 id는 1~6 사이입니다.");
         }
@@ -22,11 +21,14 @@ public final class BoardSlot {
         }
         this.sectionId = sectionId;
         this.index = index;
-        this.allowedType = Objects.requireNonNull(allowedType);
     }
 
-    public TileType getAllowedType() {
-        return allowedType;
+    public int getSectionId() {
+        return sectionId;
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     @Override
@@ -44,6 +46,6 @@ public final class BoardSlot {
 
     @Override
     public String toString() {
-        return "S" + sectionId + "#" + index + "(" + allowedType + ")";
+        return "S" + sectionId + "#" + index ;
     }
 }

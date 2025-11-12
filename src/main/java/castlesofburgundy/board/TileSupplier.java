@@ -24,11 +24,17 @@ public class TileSupplier {
 
     public Optional<Tile> draw(TileType type) {
         Deque<Tile> q = pool.get(type);
-        return (q == null || q.isEmpty()) ? Optional.empty() : Optional.of(q.pop());
+        if (q == null || q.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(q.pop());
     }
 
     public int remaining(TileType type) {
         Deque<Tile> q = pool.get(type);
-        return (q == null) ? 0 : q.size();
+        if (q == null) {
+            return 0;
+        }
+        return q.size();
     }
 }

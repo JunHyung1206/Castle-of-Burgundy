@@ -44,7 +44,7 @@ public final class GameBoardLayout {
             List<TileType> types = section.getSlotTypes();
             List<BoardSlot> sectionSlots = new ArrayList<>(types.size());
             for (int i = 0; i < types.size(); i++) {
-                sectionSlots.add(new BoardSlot(section.getSectionId(), i, types.get(i)));
+                sectionSlots.add(new BoardSlot(section.getSectionId(), i));
             }
             slotsBySection.put(section.getSectionId(), Collections.unmodifiableList(sectionSlots));
         }
@@ -127,6 +127,17 @@ public final class GameBoardLayout {
     /** 레이아웃 상 존재하는 슬롯인가? (O(1)) */
     public boolean contains(BoardSlot slot) {
         return slotSet.contains(slot);
+    }
+
+    /** 해당 슬룻이 허용하는 타입은 무엇인가? (O(1)) */
+    public TileType getAllowedType(BoardSlot slot) {
+        SectionLayout sec = getSection(slot.getSectionId());
+        int slotIndex = slot.getIndex();
+        List<TileType> types = sec.getSlotTypes();
+        if (slotIndex < 0 || slotIndex >= types.size()) {
+            throw new IllegalArgumentException("섹션 " + slot.getSectionId() + " 의 인덱스 범위 초과: " + slotIndex);
+        }
+        return types.get(slotIndex);
     }
 
     // ── 메타 ──────────────────────────────────────────────────────

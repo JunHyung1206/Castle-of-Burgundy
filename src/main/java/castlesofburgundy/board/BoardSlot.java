@@ -1,0 +1,56 @@
+package castlesofburgundy.board;
+
+import castlesofburgundy.tile.TileType;
+
+import java.util.*;
+
+
+/**
+ * 보드 칸을 식별하는 개체, 해당 칸에 들어갈 수 있는 TileType 하나
+ */
+public final class BoardSlot {
+    private final int sectionId; // 1..6
+    private final int index;     // 0..3 (섹션 내 칸 순번)
+    private final TileType allowedType;
+
+    public BoardSlot(int sectionId, int index, TileType allowedType) {
+        if (sectionId < 1 || sectionId > 6) {
+            throw new IllegalArgumentException("섹션 id는 1~6");
+        }
+        if (index < 0 || index > 3) {
+            throw new IllegalArgumentException("슬롯 index는 0~3");
+        }
+        this.sectionId = sectionId;
+        this.index = index;
+        this.allowedType = Objects.requireNonNull(allowedType);
+    }
+
+    public int getSectionId() {
+        return sectionId;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public TileType getAllowedType() {
+        return allowedType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BoardSlot bs)) return false;
+        return sectionId == bs.sectionId && index == bs.index;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sectionId, index);
+    }
+
+    @Override
+    public String toString() {
+        return "S" + sectionId + "#" + index + "(" + allowedType + ")";
+    }
+}

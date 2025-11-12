@@ -2,35 +2,39 @@ package castlesofburgundy.board;
 
 import castlesofburgundy.tile.TileType;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 // 각 섹션의 타입만 저장합니다.
 public class SectionLayout {
-    private final int id;
+    private final int sectionId;
     private final List<TileType> slotTypes;
 
-    public SectionLayout(int id, List<TileType> slotTypes) {
-        validate(id, slotTypes);
-        this.id = id;
-        this.slotTypes = slotTypes;
+    public SectionLayout(int sectionId, List<TileType> slotTypes) {
+        validate(sectionId, slotTypes);
+        this.sectionId = sectionId;
+        this.slotTypes = List.copyOf(slotTypes);
     }
 
-    private void validate(int id, List<TileType> slotTypes) {
-        if (id < 1 || id > 6) {
-            throw new IllegalArgumentException("Section id must be 1..6");
+    private void validate(int sectionId, List<TileType> slotTypes) {
+        if (sectionId < 1 || sectionId > 6) {
+            throw new IllegalArgumentException("섹션 id는 1~6 사이 입니다.");
         }
         Objects.requireNonNull(slotTypes, "slotTypes");
         if (slotTypes.size() != 4) {
-            throw new IllegalArgumentException("Each section must have 4 tiles");
+            throw new IllegalArgumentException("각 섹션은 4칸이어야 합니다.");
         }
     }
 
-    public int getId() {
-        return id;
+    public int getSectionId() {
+        return sectionId;
     }
 
     public List<TileType> getSlotTypes() {
         return slotTypes;
     }
+
+
 }

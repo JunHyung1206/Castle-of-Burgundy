@@ -52,8 +52,7 @@ public final class AsciiUtils {
     /** 타입별 배경 + 가독성(필요시 흰 글자) + 놓인 칸은 굵게 */
     public static String colorizeInner(String inner, TileType type, boolean placed) {
         String bg = bgFor(type);
-        String fg = (type == TileType.MINE || type == TileType.CASTLE || type == TileType.SHIP)
-                ? FG_WHITE : "";
+        String fg = FG_WHITE;
         String bold = placed ? BOLD : "";
         return bg + fg + bold + " " + inner + " " + RESET; // 좌우 1칸 여백
     }

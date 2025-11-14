@@ -24,7 +24,9 @@ public final class Storage {
     }
 
     public void add(Tile t) {
-        if (isFull()) throw new IllegalStateException("저장소 가득참: 먼저 버려야 함");
+        if (isFull()) {
+            throw new IllegalStateException("저장소 가득참: 먼저 버려야 함");
+        }
         slots.addLast(t);
     }
 

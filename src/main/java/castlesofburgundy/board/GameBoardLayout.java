@@ -9,9 +9,7 @@ public final class GameBoardLayout {
     // ── 보드 스펙 상수 ─────────────────────────────────────────────
     private static final int SECTION_COUNT     = 6;
     private static final int SLOTS_PER_SECTION = 4;
-    private static final int MARKET_SLOTS      = 8;
-    private static final int PHASE_SLOTS       = 5;
-    private static final int ROUND_SLOTS       = 5;
+
 
     // ── 불변 상태 ─────────────────────────────────────────────────
     private final List<SectionLayout> sections;                 // 전체 섹션 (순서 유지, 불변)
@@ -139,9 +137,4 @@ public final class GameBoardLayout {
         }
         return types.get(slotIndex);
     }
-
-    // ── 메타 ──────────────────────────────────────────────────────
-    public int getMarketSlots() { return MARKET_SLOTS; }
-    public int getPhaseSlots()  { return PHASE_SLOTS; }
-    public int getRoundSlots()  { return ROUND_SLOTS; }
 }

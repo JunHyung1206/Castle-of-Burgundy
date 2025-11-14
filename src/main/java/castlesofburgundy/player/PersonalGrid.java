@@ -1,11 +1,9 @@
 package castlesofburgundy.player;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-
 
 public class PersonalGrid {
     public static final int[][] GRID = new int[][]{
@@ -57,11 +55,9 @@ public class PersonalGrid {
         int row = index[0];
         int col = index[1];
 
-        int[][] deltas;
+        int[][] deltas = ODD_DELTAS;
         if (row % 2 == 0) {
             deltas = EVEN_DELTAS;
-        } else {
-            deltas = ODD_DELTAS;
         }
 
         List<Integer> neighbors = new ArrayList<>(6);

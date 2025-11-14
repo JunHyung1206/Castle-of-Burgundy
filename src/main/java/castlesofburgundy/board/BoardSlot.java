@@ -1,9 +1,6 @@
 package castlesofburgundy.board;
 
-import castlesofburgundy.tile.TileType;
-
 import java.util.*;
-
 
 /**
  * 보드 칸을 식별하는 개체, 해당 칸에 들어갈 수 있는 TileType 하나

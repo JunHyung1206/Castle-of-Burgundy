@@ -1,9 +1,6 @@
 package castlesofburgundy.player;
 
-import castlesofburgundy.board.BoardSlot;
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
-import castlesofburgundy.tile.*;
+import castlesofburgundy.tile.Tile;
 
 public final class Player {
     private final PersonalBoard board;
@@ -17,9 +14,6 @@ public final class Player {
         this.storage = new Storage(storageCapacity);
     }
 
-    public Storage getStorage() {
-        return storage;
-    }
     // 규칙: 언제든지 일꾼 1개로 주사위 하나에 +/-1 (1↔6 랩). 여러 개 중첩 가능
     public int spendWorkersToAdjust(int die, int workersToSpend, int sign) {
         if (workersToSpend < 0) {
@@ -37,45 +31,33 @@ public final class Player {
         return ((face - 1 + delta) % 6 + 6) % 6 + 1;
     }
 
-    // 액션: 일꾼 받기(주사위 값 무관) → 2개
-    public void actionTakeWorkers() {
-        workers += 2;
-    }
-
-    // 액션: (보드에서 이미 얻어온) 타일을 저장소에 넣기
-    public void actionAddToStorage(Tile tile) {
+    public void addToStorage(Tile tile) {
         storage.add(tile);
     }
 
-    // 액션: 저장소의 첫 타일을 꺼내 특정 칸에 배치(주사위 한 개 사용)
-    public void actionPlaceFirstFromStorage(int cellId, int dieUsed) {
-        Tile t = storage.removeFirst();
-        board.place(cellId, t, dieUsed);
-        // TODO: 배치 효과 및 점수/코인 반영은 차후 추가
+    public void placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
+        Tile tile = storage.remove(storageId);
+        board.place(cellId, tile, dieUsed);
+        // 배치 효과/점수는 나중에 여기에서 or 별도 헬퍼에서 처리
     }
 
-    // ✅ 새 액션: 시장 보드에서 주사위 눈(섹션)과 슬롯 인덱스로 타일을 가져와 저장소에 넣기
-    public void actionTakeFromMarket(BoardState market,
-                                     GameBoardLayout layout,
-                                     int dieValue,
-                                     int slotIndex) {
-        if (dieValue < 1 || dieValue > 6) {
-            throw new IllegalArgumentException("주사위 눈은 1~6 이어야 합니다: " + dieValue);
-        }
-        // 섹션 id == 주사위 눈
-        BoardSlot slot = layout.getSlot(dieValue, slotIndex);
-        Tile tile = market.removeAt(slot).orElseThrow(() ->
-                new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot)
-        );
-        storage.add(tile);
+    public void addScore(int value) {
+        score += value;
     }
 
-    // 점수/코인 유틸
-    public void addScore(int v) {
-        score += v;
+    public void addSilver(int value) {
+        silver += value;
     }
 
-    public void addSilver(int v) {
-        silver += v;
+    public void gainWorkers(int value) {
+        workers += value;
+    }
+
+    public Storage getStorage() {
+        return storage;
+    }
+
+    public PersonalBoard getBoard() {
+        return board;
     }
 }

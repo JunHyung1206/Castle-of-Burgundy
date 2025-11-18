@@ -4,7 +4,6 @@ import castlesofburgundy.tile.BaseTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 import castlesofburgundy.view.PlayerConsoleView;
-import castlesofburgundy.view.StorageConsoleView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,18 +58,15 @@ class PlayerTest {
         player.addToStorage(tile2);
         player.addToStorage(tile3);
 
-        System.out.println(PlayerConsoleView.render(player.getBoard()));
-        System.out.println(StorageConsoleView.render(player.getStorage()));
+        System.out.println(PlayerConsoleView.render(player));
 
 
         player.placeTileFromStorage(1,20,5);
         assertThat(player.getStorage().size()).isEqualTo(2);
-        System.out.println(PlayerConsoleView.render(player.getBoard()));
-        System.out.println(StorageConsoleView.render(player.getStorage()));
+        System.out.println(PlayerConsoleView.render(player));
 
         player.placeTileFromStorage(0,13,1);
         assertThat(player.getStorage().size()).isEqualTo(1);
-        System.out.println(PlayerConsoleView.render(player.getBoard()));
-        System.out.println(StorageConsoleView.render(player.getStorage()));
+        System.out.println(PlayerConsoleView.render(player));
     }
 }

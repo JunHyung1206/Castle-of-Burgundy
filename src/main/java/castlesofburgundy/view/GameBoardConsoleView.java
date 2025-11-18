@@ -87,7 +87,7 @@ public final class GameBoardConsoleView {
         out.add(padRight(border, BOX_W));
 
         for (int i = 0; i < sec.getSlotTypes().size(); i++) {
-            BoardSlot slot = layout.getSlot(sec.getSectionId(), i);
+            BoardSlot slot = new BoardSlot(sec.getSectionId(), i);
 
             String idx = String.format("%3d", i);
             String placedStr;

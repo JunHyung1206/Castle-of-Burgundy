@@ -18,7 +18,7 @@ public final class PlayerActions {
         GameBoardLayout layout = ctx.layout();
         BoardState boardState = ctx.boardState();
 
-        BoardSlot slot = layout.getSlot(dieValue, slotIndex);
+        BoardSlot slot = new BoardSlot(dieValue, slotIndex);
         Tile tile = boardState.removeAt(slot).orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot));
 
         player.addToStorage(tile);

@@ -39,20 +39,10 @@ public final class TurnManager {
         List<Option> options = new ArrayList<>();
 
         GameBoardLayout layout = ctx.layout();
-        BoardState market = ctx.boardState();
+        BoardState boardState = ctx.boardState();
 
         // 1) 시장에서 타일 가져오기 (섹션 = 주사위 눈, 슬롯 0~3)
-        for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
-            if (die < 1 || die > 6) continue;
-            BoardSlot slot = layout.getSlot(die, slotIndex);
-            if (market.isFilled(slot) && !player.getStorage().isFull()) {
-                String desc = "시장 섹션 " + die + " 슬롯 " + slotIndex + "에서 타일 가져오기";
-                int sIdx = slotIndex; // 람다 캡처용
-                options.add(new Option(desc, () ->
-                        PlayerActions.takeTileFromMarket(ctx, player, die, sIdx)
-                ));
-            }
-        }
+        takeTileFromMarket(player, die, boardState, options);
 
         // 2) 저장소 → 개인 보드 배치
         if (!player.getStorage().view().isEmpty()) {
@@ -86,6 +76,22 @@ public final class TurnManager {
         Option selected = options.get(choice);
         selected.run().run();
         System.out.println("=> 실행: " + selected.description());
+    }
+
+    private void takeTileFromMarket(Player player, int die, BoardState boardState, List<Option> options) {
+        for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
+            if (die < 1 || die > 6) {
+                throw new IllegalArgumentException("주사위의 눈은 1~6 사이입니다");
+            }
+            BoardSlot slot = new BoardSlot(die, slotIndex);
+            if (boardState.isExistTile(slot) && !player.getStorage().isFull()) {
+                String desc = "시장 섹션 " + die + " 슬롯 " + slotIndex + "에서 타일 가져오기";
+                int sIdx = slotIndex; // 람다 캡처용
+                options.add(new Option(desc, () ->
+                        PlayerActions.takeTileFromMarket(ctx, player, die, sIdx)
+                ));
+            }
+        }
     }
 
     private int readChoice(int size) {

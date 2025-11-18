@@ -38,7 +38,6 @@ public final class Player {
     public void placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
         Tile tile = storage.remove(storageId);
         board.place(cellId, tile, dieUsed);
-        // 배치 효과/점수는 나중에 여기에서 or 별도 헬퍼에서 처리
     }
 
     public void addScore(int value) {

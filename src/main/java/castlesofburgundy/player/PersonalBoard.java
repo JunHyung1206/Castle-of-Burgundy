@@ -58,7 +58,6 @@ public final class PersonalBoard {
         if (!canPlace(cellId, tile, dieUsed))
             throw new IllegalArgumentException("배치 불가: cell=" + cellId + ", die=" + dieUsed + ", tile=" + tile);
         placed.put(cellId, tile);
-        // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
     }
 
     public Set<Integer> occupiedCells() {

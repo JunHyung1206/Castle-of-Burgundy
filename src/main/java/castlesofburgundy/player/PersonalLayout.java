@@ -6,7 +6,6 @@ import java.util.*;
 
 public final class PersonalLayout {
     private final Map<Integer, PersonalCell> cells = new LinkedHashMap<>();
-    private final int startCastleId;
 
     public PersonalLayout() {
         add(new PersonalCell(1, TileType.ANIMAL, 6));
@@ -52,8 +51,6 @@ public final class PersonalLayout {
         add(new PersonalCell(35, TileType.KNOWLEDGE, 4));
         add(new PersonalCell(36, TileType.KNOWLEDGE, 1));
         add(new PersonalCell(37, TileType.BUILDING, 3));
-
-        this.startCastleId = 19; // 시작 성 위치
     }
 
     private void add(PersonalCell c) {
@@ -67,9 +64,4 @@ public final class PersonalLayout {
     public Collection<PersonalCell> all() {
         return cells.values();
     }
-
-    public int startCastleId() {
-        return startCastleId;
-    }
 }
-

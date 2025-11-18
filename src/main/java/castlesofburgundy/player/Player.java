@@ -36,7 +36,7 @@ public final class Player {
     }
 
     public void placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
-        Tile tile = storage.remove(storageId);
+        Tile tile = storage.removeAt(storageId);
         board.place(cellId, tile, dieUsed);
     }
 

@@ -30,7 +30,7 @@ public final class Storage {
         slots.addLast(tile);
     }
 
-    public Tile remove(int index) {
+    public Tile removeAt(int index) {
         Tile tile = slots.remove(index);
         if (tile == null) {
             throw new NoSuchElementException("비어있음");

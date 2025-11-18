@@ -17,7 +17,8 @@ public final class PlayerConsoleView {
     private static final String EMPTY = " ".repeat(CELL_W);
     private static final String GAP = " ";        // 셀 간 간격
 
-    public static String render(PersonalLayout layout, PersonalBoard board) {
+    public static String render(PersonalBoard board) {
+        PersonalLayout layout = board.getLayout();
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Personal Board ===\n");
 

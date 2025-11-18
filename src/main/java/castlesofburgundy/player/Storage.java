@@ -9,7 +9,7 @@ import java.util.*;
  */
 public final class Storage {
     private final int capacity;
-    private final Deque<Tile> slots = new ArrayDeque<>();
+    private final List<Tile> slots = new ArrayList<>();
 
     public Storage(int capacity) {
         this.capacity = capacity;
@@ -23,17 +23,19 @@ public final class Storage {
         return size() >= capacity;
     }
 
-    public void add(Tile t) {
+    public void add(Tile tile) {
         if (isFull()) {
             throw new IllegalStateException("저장소 가득참: 먼저 버려야 함");
         }
-        slots.addLast(t);
+        slots.addLast(tile);
     }
 
-    public Tile removeFirst() {
-        Tile t = slots.pollFirst();
-        if (t == null) throw new NoSuchElementException("비어있음");
-        return t;
+    public Tile remove(int index) {
+        Tile tile = slots.remove(index);
+        if (tile == null) {
+            throw new NoSuchElementException("비어있음");
+        }
+        return tile;
     }
 
     public List<Tile> view() {

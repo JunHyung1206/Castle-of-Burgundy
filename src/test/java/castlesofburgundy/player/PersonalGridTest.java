@@ -19,6 +19,10 @@ class PersonalGridTest {
 
         neighbors = PersonalGrid.getNeighbors(22);
         assertThat(neighbors).isEqualTo(List.of(15, 21, 28));
+
+        neighbors = PersonalGrid.getNeighbors(19);
+        assertThat(neighbors).isEqualTo(List.of(12, 13, 18,20,25,26));
+
     }
 
 }

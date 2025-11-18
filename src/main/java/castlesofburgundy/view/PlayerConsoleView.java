@@ -1,10 +1,10 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.player.PersonalBoard;
-import castlesofburgundy.player.PersonalGrid;
-import castlesofburgundy.player.PersonalLayout;
-import castlesofburgundy.player.PersonalCell;
+import castlesofburgundy.player.*;
+import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
+
+import java.util.List;
 
 public final class PlayerConsoleView {
     private PlayerConsoleView() {
@@ -17,7 +17,8 @@ public final class PlayerConsoleView {
     private static final String EMPTY = " ".repeat(CELL_W);
     private static final String GAP = " ";        // 셀 간 간격
 
-    public static String render(PersonalBoard board) {
+    public static String render(Player player) {
+        PersonalBoard board = player.getBoard();
         PersonalLayout layout = board.getLayout();
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Personal Board ===\n");
@@ -48,7 +49,10 @@ public final class PlayerConsoleView {
 
         sb.append("\n[ id:type/die ]  placed: ()   empty: []  ");
         if (COLORIZE) sb.append(AsciiUtils.FG_GRAY).append("(색상=타입 배경)").append(AsciiUtils.RESET);
-        sb.append("\n");
+        sb.append("\n\n");
+
+        String s = storageView(player.getStorage());
+        sb.append(s);
         return sb.toString();
     }
 
@@ -58,5 +62,28 @@ public final class PlayerConsoleView {
         int pad = Math.max(0, INNER_W - visible);
         String padded = content + " ".repeat(pad);
         return (placed ? "(" : "[") + padded + (placed ? ")" : "]");
+    }
+
+    private static String storageView(Storage storage) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Storage ===\n");
+
+        List<Tile> tiles = storage.view();
+        if (tiles.isEmpty()) {
+            sb.append("(empty)\n");
+            return sb.toString();
+        }
+
+        for (int i = 0; i < tiles.size(); i++) {
+            Tile t = tiles.get(i);
+            sb.append("#")
+                    .append(i)
+                    .append(" : ")
+                    .append(t.type())
+                    .append(" (id=")
+                    .append(t.id())
+                    .append(")\n");
+        }
+        return sb.toString();
     }
 }

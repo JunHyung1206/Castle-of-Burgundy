@@ -2,7 +2,6 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardSlot;
 import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
@@ -64,17 +63,22 @@ public final class TurnManager {
     }
 
     private static void placeFromStorageAction(Player player, int die, List<Option> options) {
+        if (player.getStorage().isEmpty()) {
+            return;
+        }
+
         List<Tile> stored = player.getStorage().view();
         PersonalBoard board = player.getBoard();
 
         for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
             Tile t = stored.get(storageIndex);
-            int sIdx = storageIndex; // 먼저 복사
-            // 이 타일을 현재 주사위 눈으로 둘 수 있는 칸
+            int sIdx = storageIndex;
+
             for (int cellId : board.legalPlacements(t, die)) {
-                String desc = "저장소[" + storageIndex + "]의 " + t.type() + " 를 cell " + cellId + " 에 배치";
+                int cId = cellId;
+                String desc = "저장소[" + sIdx + "]의 " + t.type() + " 를 cell " + cId + " 에 배치";
                 options.add(new Option(desc, () ->
-                        PlayerActions.placeFromStorage(player, sIdx, cellId, die)
+                        PlayerActions.placeFromStorage(player, sIdx, cId, die)
                 ));
             }
         }
@@ -85,8 +89,11 @@ public final class TurnManager {
             if (die < 1 || die > 6) {
                 throw new IllegalArgumentException("주사위의 눈은 1~6 사이입니다");
             }
+            if (player.getStorage().isFull()){
+                return;
+            }
             BoardSlot slot = new BoardSlot(die, slotIndex);
-            if (boardState.isExist(slot) && !player.getStorage().isFull()) {
+            if (boardState.hasTile(slot)) {
                 String desc = "시장 섹션 " + die + " 슬롯 " + slotIndex + "에서 타일 가져오기";
                 int sIdx = slotIndex;
                 options.add(new Option(desc, () ->

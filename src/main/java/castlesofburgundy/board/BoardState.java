@@ -42,12 +42,8 @@ public class BoardState {
         return Optional.ofNullable(placed.get(slot));
     }
 
-    public boolean isExist(BoardSlot slot) {
+    public boolean hasTile(BoardSlot slot) {
         return placed.containsKey(slot);
-    }
-
-    public boolean isEmpty(BoardSlot slot) {
-        return !isExist(slot);
     }
 
     public Map<BoardSlot, Tile> snapshot() {

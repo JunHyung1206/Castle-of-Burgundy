@@ -32,7 +32,7 @@ class BoardStateTest {
     @Test
     @DisplayName("처음 시작할때는 모두 빈 상태로 시작한다.")
     void initTest() {
-        boolean empty = boardState.isEmptyTile(new BoardSlot(1, 1));
+        boolean empty = boardState.isEmpty(new BoardSlot(1, 1));
         assertThat(empty).isTrue();
 
         System.out.println(GameBoardConsoleView.render(gameBoardLayout, boardState));
@@ -41,11 +41,11 @@ class BoardStateTest {
     @Test
     @DisplayName("Supplier를 통해 전부 채워지는 기능이 동작한다.")
     void allFillBySupplierTest(){
-        boolean empty = boardState.isEmptyTile(new BoardSlot(1, 1));
+        boolean empty = boardState.isEmpty(new BoardSlot(1, 1));
         assertThat(empty).isTrue();
 
         boardState.fillAllFromSupply(supplier);
-        empty = boardState.isEmptyTile(new BoardSlot(1, 1));
+        empty = boardState.isEmpty(new BoardSlot(1, 1));
         assertThat(empty).isFalse();
 
         Tile tile = boardState.get(new BoardSlot(1, 1)).get();
@@ -68,7 +68,7 @@ class BoardStateTest {
         BoardSlot removeSlot = new BoardSlot(1, 1);
         Optional<Tile> tile = boardState.removeAt(removeSlot);
         assertThat(tile.get()).isInstanceOf(Tile.class);
-        assertThat(boardState.isEmptyTile(removeSlot)).isTrue();
+        assertThat(boardState.isEmpty(removeSlot)).isTrue();
 
         System.out.println(GameBoardConsoleView.render(gameBoardLayout, boardState));
     }

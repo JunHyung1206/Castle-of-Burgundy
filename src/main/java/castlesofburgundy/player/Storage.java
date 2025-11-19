@@ -23,19 +23,22 @@ public final class Storage {
         return size() >= capacity;
     }
 
+    public boolean isEmpty(){
+        return slots.isEmpty();
+    }
+
     public void add(Tile tile) {
         if (isFull()) {
             throw new IllegalStateException("저장소 가득참: 먼저 버려야 함");
         }
-        slots.addLast(tile);
+        slots.add(tile);
     }
 
     public Tile removeAt(int index) {
-        Tile tile = slots.remove(index);
-        if (tile == null) {
-            throw new NoSuchElementException("비어있음");
+        if ((index < 0) || (index >= slots.size())) {
+            throw new IndexOutOfBoundsException("index=" + index);
         }
-        return tile;
+        return slots.remove(index);
     }
 
     public List<Tile> view() {

@@ -24,6 +24,7 @@ public final class TurnManager {
         System.out.println("\n=== 플레이어의 턴 ===");
         int d1 = Dice.roll();
         int d2 = Dice.roll();
+
         System.out.println("굴린 주사위: " + d1 + ", " + d2);
 
         handleDie(player, d1, 1);
@@ -31,41 +32,19 @@ public final class TurnManager {
     }
 
 
-    private record Option(String description, Runnable run) {}
+    private record Option(String description, Runnable run) {
+    }
 
     private void handleDie(Player player, int die, int dieIndex) {
         System.out.println("\n[" + dieIndex + "번째 주사위: " + die + "]");
 
         List<Option> options = new ArrayList<>();
-
-        GameBoardLayout layout = ctx.layout();
         BoardState boardState = ctx.boardState();
 
-        // 1) 시장에서 타일 가져오기 (섹션 = 주사위 눈, 슬롯 0~3)
-        takeTileFromMarket(player, die, boardState, options);
 
-        // 2) 저장소 → 개인 보드 배치
-        if (!player.getStorage().view().isEmpty()) {
-            List<Tile> stored = player.getStorage().view();
-            PersonalBoard board = player.getBoard();
-
-            for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
-                Tile t = stored.get(storageIndex);
-                // 이 타일을 현재 주사위 눈으로 둘 수 있는 칸
-                for (int cellId : board.legalPlacements(t, die)) {
-                    String desc = "저장소[" + storageIndex + "]의 " + t.type() + " 를 cell " + cellId + " 에 배치";
-                    int sIdx = storageIndex;
-                    options.add(new Option(desc, () ->
-                            PlayerActions.placeFromStorage(player, sIdx, cellId, die)
-                    ));
-                }
-            }
-        }
-
-        // 3) 일꾼 2개 받기 (항상 가능)
-        options.add(new Option("일꾼 2개 받기", () ->
-                PlayerActions.takeWorkers(player)
-        ));
+        takeTileFromMarketAction(player, die, boardState, options); // 1) 시장에서 타일 가져오기 (섹션 = 주사위 눈, 슬롯 0~3)
+        placeFromStorageAction(player, die, options); // 2) 저장소 → 개인 보드 배치
+        takeWorkersAction(player, options); // 3) 일꾼 2개 받기 (항상 가능)
 
         // 메뉴 출력
         for (int i = 0; i < options.size(); i++) {
@@ -78,15 +57,38 @@ public final class TurnManager {
         System.out.println("=> 실행: " + selected.description());
     }
 
-    private void takeTileFromMarket(Player player, int die, BoardState boardState, List<Option> options) {
+    private static void takeWorkersAction(Player player, List<Option> options) {
+        options.add(new Option("일꾼 2개 받기", () ->
+                PlayerActions.takeWorkers(player)
+        ));
+    }
+
+    private static void placeFromStorageAction(Player player, int die, List<Option> options) {
+        List<Tile> stored = player.getStorage().view();
+        PersonalBoard board = player.getBoard();
+
+        for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
+            Tile t = stored.get(storageIndex);
+            int sIdx = storageIndex; // 먼저 복사
+            // 이 타일을 현재 주사위 눈으로 둘 수 있는 칸
+            for (int cellId : board.legalPlacements(t, die)) {
+                String desc = "저장소[" + storageIndex + "]의 " + t.type() + " 를 cell " + cellId + " 에 배치";
+                options.add(new Option(desc, () ->
+                        PlayerActions.placeFromStorage(player, sIdx, cellId, die)
+                ));
+            }
+        }
+    }
+
+    private void takeTileFromMarketAction(Player player, int die, BoardState boardState, List<Option> options) {
         for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
             if (die < 1 || die > 6) {
                 throw new IllegalArgumentException("주사위의 눈은 1~6 사이입니다");
             }
             BoardSlot slot = new BoardSlot(die, slotIndex);
-            if (boardState.isExistTile(slot) && !player.getStorage().isFull()) {
+            if (boardState.isExist(slot) && !player.getStorage().isFull()) {
                 String desc = "시장 섹션 " + die + " 슬롯 " + slotIndex + "에서 타일 가져오기";
-                int sIdx = slotIndex; // 람다 캡처용
+                int sIdx = slotIndex;
                 options.add(new Option(desc, () ->
                         PlayerActions.takeTileFromMarket(ctx, player, die, sIdx)
                 ));
@@ -101,7 +103,8 @@ public final class TurnManager {
             try {
                 int v = Integer.parseInt(line);
                 if (v >= 0 && v < size) return v;
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
             System.out.println("잘못된 입력입니다.");
         }
     }

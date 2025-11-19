@@ -15,7 +15,6 @@ public final class PlayerActions {
             throw new IllegalArgumentException("slotIndex 0~3");
         }
 
-        GameBoardLayout layout = ctx.layout();
         BoardState boardState = ctx.boardState();
 
         BoardSlot slot = new BoardSlot(dieValue, slotIndex);

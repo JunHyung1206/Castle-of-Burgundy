@@ -12,7 +12,7 @@ class BoardSlotTest {
     @DisplayName("정상적인 slot에 대해서는 정상적으로 생성된다.")
     void successTest() {
         BoardSlot boardSlot = new BoardSlot(1, 1);
-        Assertions.assertThat(boardSlot.getIndex()).isEqualTo(1);
+        Assertions.assertThat(boardSlot.index()).isEqualTo(1);
         Assertions.assertThat(boardSlot).isEqualTo(new BoardSlot(1, 1));
     }
 

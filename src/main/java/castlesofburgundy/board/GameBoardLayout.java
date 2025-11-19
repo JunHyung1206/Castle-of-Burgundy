@@ -5,18 +5,15 @@ import castlesofburgundy.tile.TileType;
 import java.util.*;
 
 public final class GameBoardLayout {
-
-    // ── 보드 스펙 상수 ─────────────────────────────────────────────
     private static final int SECTION_COUNT     = 6;
     private static final int SLOTS_PER_SECTION = 4;
 
 
-    // ── 불변 상태 ─────────────────────────────────────────────────
     private final List<SectionLayout> sections;                 // 전체 섹션 (순서 유지, 불변)
     private final Map<Integer, SectionLayout> sectionById;      // id -> 섹션 (불변)
     private final List<BoardSlot> slots;                        // 전체 슬롯 (불변)
 
-    // ── 생성 ─────────────────────────────────────────────────────
+
     public GameBoardLayout() {
         this.sections = buildSections();
         validateSections(this.sections);
@@ -29,7 +26,7 @@ public final class GameBoardLayout {
         this.sectionById = Collections.unmodifiableMap(byId);
 
         Map<Integer, List<BoardSlot>> slotsById = buildSlotsById(this.sections);
-        this.slots = Collections.unmodifiableList(flattenSlots(slotsById, SECTION_COUNT * SLOTS_PER_SECTION));
+        this.slots = Collections.unmodifiableList(flattenSlots(slotsById));
     }
 
     private static Map<Integer, List<BoardSlot>> buildSlotsById(List<SectionLayout> sections) {
@@ -45,15 +42,14 @@ public final class GameBoardLayout {
         return slotsBySection;
     }
 
-    private static List<BoardSlot> flattenSlots(Map<Integer, List<BoardSlot>> slotsBySection, int capacity) {
-        List<BoardSlot> all = new ArrayList<>(capacity);
+    private static List<BoardSlot> flattenSlots(Map<Integer, List<BoardSlot>> slotsBySection) {
+        List<BoardSlot> all = new ArrayList<>();
         for (List<BoardSlot> sectionSlots : slotsBySection.values()) {
             all.addAll(sectionSlots);
         }
         return all;
     }
 
-    // ── 빌드/검증 ─────────────────────────────────────────────────
     private static List<SectionLayout> buildSections() {
         return List.of(
                 new SectionLayout(1, List.of(TileType.BUILDING,  TileType.SHIP,     TileType.KNOWLEDGE, TileType.ANIMAL)),
@@ -77,18 +73,14 @@ public final class GameBoardLayout {
         }
     }
 
-    // ── 조회 API ──────────────────────────────────────────────────
-    /** 전체 슬롯(불변) */
     public List<BoardSlot> asSlots() {
-        return slots;
+        return List.copyOf(slots);
     }
 
-    /** 전체 섹션(불변) */
     public List<SectionLayout> getSections() {
-        return sections;
+        return List.copyOf(sections);
     }
 
-    /** 섹션 id → 섹션 (없으면 예외) */
     public SectionLayout getSection(int sectionId) {
         SectionLayout s = sectionById.get(sectionId);
         if (s == null) {
@@ -97,13 +89,12 @@ public final class GameBoardLayout {
         return s;
     }
 
-    /** 해당 슬룻이 허용하는 타입은 무엇인가? (O(1)) */
     public TileType getAllowedType(BoardSlot slot) {
-        SectionLayout sec = getSection(slot.getSectionId());
-        int slotIndex = slot.getIndex();
+        SectionLayout sec = getSection(slot.sectionId());
+        int slotIndex = slot.index();
         List<TileType> types = sec.getSlotTypes();
         if (slotIndex < 0 || slotIndex >= types.size()) {
-            throw new IllegalArgumentException("섹션 " + slot.getSectionId() + " 의 인덱스 범위 초과: " + slotIndex);
+            throw new IllegalArgumentException("섹션 " + slot.sectionId() + " 의 인덱스 범위 초과: " + slotIndex);
         }
         return types.get(slotIndex);
     }

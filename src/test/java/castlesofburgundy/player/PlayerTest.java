@@ -17,7 +17,7 @@ class PlayerTest {
     void setUp() {
         PersonalBoard personalBoard = new PersonalBoard(new PersonalLayout());
         personalBoard.setupInitialCastle(19);
-        player = new Player(personalBoard,3);
+        player = new Player(personalBoard,3, "player1");
     }
 
     @Test

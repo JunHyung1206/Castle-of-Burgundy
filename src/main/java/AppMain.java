@@ -15,11 +15,7 @@ public class AppMain {
         pb1.setupInitialCastle(19);
         Player p1 = new Player(pb1, 3, "플레이어1");
 
-        PersonalBoard pb2 = new PersonalBoard(new PersonalLayout());
-        pb2.setupInitialCastle(19);
-        Player p2 = new Player(pb2, 3, "플레이어2");
-
-        Player[] players = { p1, p2 };
+        Player[] players = {p1};
 
         TurnManager tm = new TurnManager(ctx, new Scanner(System.in));
         RoundManager rm = new RoundManager(ctx.boardState(), ctx.tileSupplier());
@@ -33,6 +29,5 @@ public class AppMain {
         System.out.println("\n=== 최종 플레이어1 보드 ===");
         System.out.println(PlayerConsoleView.render(p1));
         System.out.println("\n=== 최종 플레이어2 보드 ===");
-        System.out.println(PlayerConsoleView.render(p2));
     }
 }

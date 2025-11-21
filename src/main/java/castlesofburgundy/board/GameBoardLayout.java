@@ -5,7 +5,7 @@ import castlesofburgundy.tile.TileType;
 import java.util.*;
 
 public final class GameBoardLayout {
-    private static final int SECTION_COUNT     = 6;
+    private static final int SECTION_COUNT = 6;
     private static final int SLOTS_PER_SECTION = 4;
 
 
@@ -52,12 +52,12 @@ public final class GameBoardLayout {
 
     private static List<SectionLayout> buildSections() {
         return List.of(
-                new SectionLayout(1, List.of(TileType.BUILDING,  TileType.SHIP,     TileType.KNOWLEDGE, TileType.ANIMAL)),
-                new SectionLayout(2, List.of(TileType.KNOWLEDGE, TileType.CASTLE,   TileType.BUILDING,  TileType.BUILDING)),
-                new SectionLayout(3, List.of(TileType.ANIMAL,    TileType.BUILDING, TileType.SHIP,      TileType.KNOWLEDGE)),
-                new SectionLayout(4, List.of(TileType.SHIP,      TileType.BUILDING, TileType.ANIMAL,    TileType.MINE)),
-                new SectionLayout(5, List.of(TileType.MINE,      TileType.KNOWLEDGE,TileType.BUILDING,  TileType.BUILDING)),
-                new SectionLayout(6, List.of(TileType.BUILDING,  TileType.ANIMAL,   TileType.CASTLE,    TileType.SHIP))
+                new SectionLayout(1, List.of(TileType.BUILDING, TileType.SHIP, TileType.KNOWLEDGE, TileType.ANIMAL)),
+                new SectionLayout(2, List.of(TileType.KNOWLEDGE, TileType.CASTLE, TileType.BUILDING, TileType.BUILDING)),
+                new SectionLayout(3, List.of(TileType.ANIMAL, TileType.BUILDING, TileType.SHIP, TileType.KNOWLEDGE)),
+                new SectionLayout(4, List.of(TileType.SHIP, TileType.BUILDING, TileType.ANIMAL, TileType.MINE)),
+                new SectionLayout(5, List.of(TileType.MINE, TileType.KNOWLEDGE, TileType.BUILDING, TileType.BUILDING)),
+                new SectionLayout(6, List.of(TileType.BUILDING, TileType.ANIMAL, TileType.CASTLE, TileType.SHIP))
         );
     }
 

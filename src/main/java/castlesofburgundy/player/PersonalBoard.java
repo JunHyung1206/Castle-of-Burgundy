@@ -73,6 +73,7 @@ public final class PersonalBoard {
         }
         return out;
     }
+
     public PersonalLayout getLayout() {
         return layout;
     }

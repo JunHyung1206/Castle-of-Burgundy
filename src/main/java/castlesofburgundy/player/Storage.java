@@ -23,7 +23,7 @@ public final class Storage {
         return size() >= capacity;
     }
 
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return slots.isEmpty();
     }
 

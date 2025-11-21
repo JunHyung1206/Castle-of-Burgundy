@@ -17,18 +17,20 @@ class BoardStateTest {
     GameBoardLayout gameBoardLayout = new GameBoardLayout();
     BoardState boardState = new BoardState(gameBoardLayout);
     TileSupplier supplier;
+
     @BeforeEach
     void setUp() {
         Map<TileType, Integer> counts = Map.of(
-                TileType.CASTLE,    8,
-                TileType.SHIP,      100,
-                TileType.MINE,      100,
-                TileType.ANIMAL,    200,
-                TileType.BUILDING,  280,
+                TileType.CASTLE, 8,
+                TileType.SHIP, 100,
+                TileType.MINE, 100,
+                TileType.ANIMAL, 200,
+                TileType.BUILDING, 280,
                 TileType.KNOWLEDGE, 180
         );
         supplier = new TileSupplier(counts, 42);
     }
+
     @Test
     @DisplayName("처음 시작할때는 모두 빈 상태로 시작한다.")
     void initTest() {
@@ -40,7 +42,7 @@ class BoardStateTest {
 
     @Test
     @DisplayName("Supplier를 통해 전부 채워지는 기능이 동작한다.")
-    void allFillBySupplierTest(){
+    void allFillBySupplierTest() {
         boolean empty = boardState.hasTile(new BoardSlot(1, 1));
         assertThat(empty).isFalse();
 
@@ -62,7 +64,7 @@ class BoardStateTest {
 
     @Test
     @DisplayName("지우는 동작을 확인한다.")
-    void removeTest(){
+    void removeTest() {
         boardState.fillAllFromSupply(supplier);
 
         BoardSlot removeSlot = new BoardSlot(1, 1);

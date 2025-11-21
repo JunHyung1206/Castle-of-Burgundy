@@ -9,4 +9,5 @@ public record GameContext(
         GameBoardLayout layout,
         BoardState boardState,
         TileSupplier tileSupplier
-) {}
+) {
+}

@@ -13,16 +13,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PlayerTest {
     Player player;
+
     @BeforeEach
     void setUp() {
         PersonalBoard personalBoard = new PersonalBoard(new PersonalLayout());
         personalBoard.setupInitialCastle(19);
-        player = new Player(personalBoard,3, "player1");
+        player = new Player(personalBoard, 3, "player1");
     }
 
     @Test
     @DisplayName("저장소에 타일을 추가한다.")
-    void addToStorageTest(){
+    void addToStorageTest() {
         Tile tile = BaseTile.of(TileType.KNOWLEDGE, 0);
         player.addToStorage(tile);
 
@@ -32,7 +33,7 @@ class PlayerTest {
 
     @Test
     @DisplayName("저장소가 가득차면 더는 추가할 수 없다.")
-    void addToStorageFullTest(){
+    void addToStorageFullTest() {
         Tile tile1 = BaseTile.of(TileType.KNOWLEDGE, 0);
         Tile tile2 = BaseTile.of(TileType.SHIP, 1);
         Tile tile3 = BaseTile.of(TileType.CASTLE, 2);
@@ -49,7 +50,7 @@ class PlayerTest {
 
     @Test
     @DisplayName("저장소에 있는 타일을 가져와서 배치한다.")
-    void removeFromStorageTest(){
+    void removeFromStorageTest() {
         Tile tile1 = BaseTile.of(TileType.KNOWLEDGE, 0);
         Tile tile2 = BaseTile.of(TileType.SHIP, 1);
         Tile tile3 = BaseTile.of(TileType.CASTLE, 2);
@@ -61,11 +62,11 @@ class PlayerTest {
         System.out.println(PlayerConsoleView.render(player));
 
 
-        player.placeTileFromStorage(1,20,5);
+        player.placeTileFromStorage(1, 20, 5);
         assertThat(player.getStorage().size()).isEqualTo(2);
         System.out.println(PlayerConsoleView.render(player));
 
-        player.placeTileFromStorage(0,13,1);
+        player.placeTileFromStorage(0, 13, 1);
         assertThat(player.getStorage().size()).isEqualTo(1);
         System.out.println(PlayerConsoleView.render(player));
     }

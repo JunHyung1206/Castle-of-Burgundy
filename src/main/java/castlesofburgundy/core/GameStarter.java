@@ -14,11 +14,11 @@ public final class GameStarter {
 
         // 2) 타입별 공급 수량 (예시값; 필요 시 조정)
         Map<TileType, Integer> counts = Map.of(
-                TileType.CASTLE,    8,
-                TileType.SHIP,      100,
-                TileType.MINE,      100,
-                TileType.ANIMAL,    200,
-                TileType.BUILDING,  280,
+                TileType.CASTLE, 8,
+                TileType.SHIP, 100,
+                TileType.MINE, 100,
+                TileType.ANIMAL, 200,
+                TileType.BUILDING, 280,
                 TileType.KNOWLEDGE, 180
         );
 

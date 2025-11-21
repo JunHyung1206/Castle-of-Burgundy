@@ -8,7 +8,7 @@ public final class PlayerActions {
     private PlayerActions() {
     }
 
-    public static void takeTileFromMarket(GameContext ctx, Player player, int dieValue, int slotIndex) {
+    public static void takeTileFromBoard(GameContext ctx, Player player, int dieValue, int slotIndex) {
         if (dieValue < 1 || dieValue > 6) {
             throw new IllegalArgumentException("주사위 눈은 1~6");
         }
@@ -24,7 +24,7 @@ public final class PlayerActions {
         player.addToStorage(tile);
     }
 
-    public static void placeFromStorage(Player player, int storageId, int cellId, int dieUsed) {
+    public static void placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed) {
         player.placeTileFromStorage(storageId, cellId, dieUsed);
         // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
     }

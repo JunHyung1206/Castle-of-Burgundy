@@ -41,8 +41,8 @@ public final class TurnManager {
         BoardState boardState = ctx.boardState();
 
 
-        takeTileFromMarketAction(player, die, boardState, options); // 1) 시장에서 타일 가져오기 (섹션 = 주사위 눈, 슬롯 0~3)
-        placeFromStorageAction(player, die, options); // 2) 저장소 → 개인 보드 배치
+        takeTileFromBoardAction(player, die, boardState, options); // 1) 시장에서 타일 가져오기 (섹션 = 주사위 눈, 슬롯 0~3)
+        placeTileFromStorageAction(player, die, options); // 2) 저장소 → 개인 보드 배치
         takeWorkersAction(player, options); // 3) 일꾼 2개 받기 (항상 가능)
 
         // 메뉴 출력
@@ -62,7 +62,7 @@ public final class TurnManager {
         ));
     }
 
-    private static void placeFromStorageAction(Player player, int die, List<Option> options) {
+    private static void placeTileFromStorageAction(Player player, int die, List<Option> options) {
         if (player.getStorage().isEmpty()) {
             return;
         }
@@ -78,13 +78,13 @@ public final class TurnManager {
                 int cId = cellId;
                 String desc = "저장소[" + sIdx + "]의 " + t.type() + " 를 cell " + cId + " 에 배치";
                 options.add(new Option(desc, () ->
-                        PlayerActions.placeFromStorage(player, sIdx, cId, die)
+                        PlayerActions.placeTileFromStorage(player, sIdx, cId, die)
                 ));
             }
         }
     }
 
-    private void takeTileFromMarketAction(Player player, int die, BoardState boardState, List<Option> options) {
+    private void takeTileFromBoardAction(Player player, int die, BoardState boardState, List<Option> options) {
         for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
             if (die < 1 || die > 6) {
                 throw new IllegalArgumentException("주사위의 눈은 1~6 사이입니다");
@@ -97,7 +97,7 @@ public final class TurnManager {
                 String desc = "시장 섹션 " + die + " 슬롯 " + slotIndex + "에서 타일 가져오기";
                 int sIdx = slotIndex;
                 options.add(new Option(desc, () ->
-                        PlayerActions.takeTileFromMarket(ctx, player, die, sIdx)
+                        PlayerActions.takeTileFromBoard(ctx, player, die, sIdx)
                 ));
             }
         }

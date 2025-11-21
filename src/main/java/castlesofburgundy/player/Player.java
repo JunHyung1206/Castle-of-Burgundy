@@ -5,13 +5,20 @@ import castlesofburgundy.tile.Tile;
 public final class Player {
     private final PersonalBoard board;
     private final Storage storage;
+    private final String name;
+
     private int workers = 0;
     private int silver = 0;
     private int score = 0;
 
-    public Player(PersonalBoard board, int storageCapacity) {
+    public Player(PersonalBoard board, int storageCapacity, String name) {
         this.board = board;
         this.storage = new Storage(storageCapacity);
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     // 규칙: 언제든지 일꾼 1개로 주사위 하나에 +/-1 (1↔6 랩). 여러 개 중첩 가능

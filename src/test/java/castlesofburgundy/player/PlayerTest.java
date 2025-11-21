@@ -70,4 +70,35 @@ class PlayerTest {
         assertThat(player.getStorage().size()).isEqualTo(1);
         System.out.println(PlayerConsoleView.render(player));
     }
+
+    @Test
+    @DisplayName("일꾼을 사용해 주사위 눈을 ±1, ±2 조정한다")
+    void adjustDieWithWorkers() {
+        PersonalBoard board = new PersonalBoard(new PersonalLayout());
+        board.setupInitialCastle(19);
+        Player p = new Player(board, 3, "p");
+
+        p.gainWorkers(3);
+
+        int r1 = p.spendWorkersToAdjust(3, 1, +1); // +1
+        assertThat(r1).isEqualTo(4);
+
+        int r2 = p.spendWorkersToAdjust(6, 2, +1); // +2, 6→2(랩)
+        assertThat(r2).isEqualTo(2);
+    }
+
+
+    @Test
+    @DisplayName("일꾼이 부족하다면 주사위 눈을 조정할 수 없다.")
+    void failUseWorkers() {
+        PersonalBoard board = new PersonalBoard(new PersonalLayout());
+        board.setupInitialCastle(19);
+        Player p = new Player(board, 3, "p");
+
+        p.gainWorkers(2);
+
+        assertThrows(IllegalStateException.class,
+                () -> p.spendWorkersToAdjust(6, 3, +1));
+    }
+
 }

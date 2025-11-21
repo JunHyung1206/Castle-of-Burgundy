@@ -6,13 +6,14 @@ import castlesofburgundy.tile.Tile;
 import java.util.*;
 
 public final class GameBoardConsoleView {
-    private GameBoardConsoleView() { }
+    private GameBoardConsoleView() {
+    }
 
     // ===== 설정 =====
     private static final boolean COLORIZE = true;   // 색 끄려면 false
-    private static final int COL_W   = 10;          // placed 컬럼 내부 폭(괄호 제외)
-    private static final int BOX_W   = 2 + 3 + 1 + 2 + COL_W + 2; // "|idx| placed |" 폭
-    private static final String SEP  = "   ";       // 섹션 간 간격
+    private static final int COL_W = 10;          // placed 컬럼 내부 폭(괄호 제외)
+    private static final int BOX_W = 2 + 3 + 1 + 2 + COL_W + 2; // "|idx| placed |" 폭
+    private static final String SEP = "   ";       // 섹션 간 간격
 
     private static final String TILE_TYPE = "타입: B=건물, S=선박, K=지식, A=동물, M=광산, C=성";
     private static final String TILE_TYPE_DETAILS =
@@ -52,7 +53,9 @@ public final class GameBoardConsoleView {
         sb.append("=== Market Board  ===\n");
 
         Map<Integer, SectionLayout> byId = new HashMap<>();
-        for (SectionLayout s : layout.getSections()) byId.put(s.getSectionId(), s);
+        for (SectionLayout s : layout.getSections()) {
+            byId.put(s.getSectionId(), s);
+        }
 
         int[] order = {1, 2, 3, 4, 5, 6};
         Map<BoardSlot, Tile> snap = boardState.snapshot();
@@ -61,7 +64,7 @@ public final class GameBoardConsoleView {
         List<List<String>> boxes = new ArrayList<>();
         for (int secId : order) {
             SectionLayout sec = layout.getSection(secId);
-            boxes.add(renderSectionBox(layout, sec, snap));
+            boxes.add(renderSectionBox(sec, snap));
         }
 
         // 가로로 병합
@@ -77,9 +80,7 @@ public final class GameBoardConsoleView {
         return sb.toString();
     }
 
-    // ─────────────────────────────────────────────────────────────
-
-    private static List<String> renderSectionBox(GameBoardLayout layout, SectionLayout sec, Map<BoardSlot, Tile> grid) {
+    private static List<String> renderSectionBox(SectionLayout sec, Map<BoardSlot, Tile> grid) {
         List<String> out = new ArrayList<>();
         String border = "+---+------------+";
         out.add(padRight(border, BOX_W));
@@ -95,13 +96,13 @@ public final class GameBoardConsoleView {
             if (t != null) {
                 String inner = AsciiUtils.shortType(t.type());
                 String colored = COLORIZE ? AsciiUtils.colorizeInner(inner, t.type(), true) : inner;
-                placedStr = padRight(colored+  t.id(), COL_W);
+                placedStr = padRight(colored + t.id(), COL_W);
             } else {
                 String empty = COLORIZE ? AsciiUtils.FG_GRAY + "--" + AsciiUtils.RESET : "--";
                 placedStr = padRight(empty, COL_W);
             }
 
-            String row = "|" + idx + "|" + " " + placedStr + " "  + "|";
+            String row = "|" + idx + "|" + " " + placedStr + " " + "|";
             out.add(padRight(row, BOX_W));
         }
         out.add(padRight(border, BOX_W));

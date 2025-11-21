@@ -5,7 +5,8 @@ import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
 
 public final class PlayerActions {
-    private PlayerActions() {}
+    private PlayerActions() {
+    }
 
     public static void takeTileFromMarket(GameContext ctx, Player player, int dieValue, int slotIndex) {
         if (dieValue < 1 || dieValue > 6) {
@@ -24,7 +25,7 @@ public final class PlayerActions {
     }
 
     public static void placeFromStorage(Player player, int storageId, int cellId, int dieUsed) {
-        player.placeTileFromStorage(storageId, cellId,dieUsed);
+        player.placeTileFromStorage(storageId, cellId, dieUsed);
         // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
     }
 

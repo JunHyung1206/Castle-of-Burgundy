@@ -20,7 +20,7 @@ public final class TurnManager {
     }
 
     public void playerTurn(Player player) {
-        System.out.println("\n=== 플레이어의 턴 ===");
+        System.out.println("\n===" + player.getName() + "의 턴 ===");
         int d1 = Dice.roll();
         int d2 = Dice.roll();
 
@@ -89,7 +89,7 @@ public final class TurnManager {
             if (die < 1 || die > 6) {
                 throw new IllegalArgumentException("주사위의 눈은 1~6 사이입니다");
             }
-            if (player.getStorage().isFull()){
+            if (player.getStorage().isFull()) {
                 return;
             }
             BoardSlot slot = new BoardSlot(die, slotIndex);

@@ -1,5 +1,6 @@
 package castlesofburgundy.board;
 
+import castlesofburgundy.core.TileSupplier;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 

@@ -1,4 +1,4 @@
-package castlesofburgundy.board;
+package castlesofburgundy.core;
 
 import castlesofburgundy.tile.BaseTile;
 import castlesofburgundy.tile.Tile;

@@ -2,7 +2,6 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.board.GameBoardLayout;
-import castlesofburgundy.board.TileSupplier;
 import castlesofburgundy.tile.TileType;
 
 import java.util.Map;

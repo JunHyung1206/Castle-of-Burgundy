@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.TileSupplier;
 
 import java.util.Objects;
 

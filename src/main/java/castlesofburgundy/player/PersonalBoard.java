@@ -60,11 +60,6 @@ public final class PersonalBoard {
         placed.put(cellId, tile);
     }
 
-    public Set<Integer> occupiedCells() {
-        return Collections.unmodifiableSet(placed.keySet());
-    }
-
-    // PersonalBoard.java (추가)
     public Set<Integer> legalPlacements(Tile tile, int dieUsed) {
         if (tile == null) return Set.of();
         Set<Integer> out = new LinkedHashSet<>();
@@ -72,6 +67,67 @@ public final class PersonalBoard {
             if (canPlace(cell.id(), tile, dieUsed)) out.add(cell.id());
         }
         return out;
+    }
+
+    // PersonalBoard.java 안에 추가
+
+    /**
+     * startCellId가 속한 "같은 타입의 연결된 구역" 전체를 반환.
+     * (레이아웃 기준, 배치 여부와는 무관하게 타입만 보고 연결 컴포넌트 구성)
+     */
+    public Set<Integer> sameTypeRegion(int startCellId) {
+        PersonalCell start = layout.get(startCellId);
+        if (start == null) {
+            return Set.of();
+        }
+        TileType targetType = start.type();
+
+        Set<Integer> visited = new LinkedHashSet<>();
+        Deque<Integer> dq = new ArrayDeque<>();
+
+        visited.add(startCellId);
+        dq.add(startCellId);
+
+        while (!dq.isEmpty()) {
+            int cur = dq.poll();
+            for (int nb : PersonalGrid.getNeighbors(cur)) {
+                if (visited.contains(nb)) {
+                    continue;
+                }
+                PersonalCell nbCell = layout.get(nb);
+                if (nbCell != null && nbCell.type() == targetType) {
+                    visited.add(nb);
+                    dq.add(nb);
+                }
+            }
+        }
+        return visited;
+    }
+
+    public boolean isRegionCompleted(int startCellId) {
+        Set<Integer> region = sameTypeRegion(startCellId);
+        if (region.isEmpty()) {
+            return false;
+        }
+        for (int id : region) {
+            if (!placed.containsKey(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public int completedRegionSizeIfAny(int startCellId) {
+        Set<Integer> region = sameTypeRegion(startCellId);
+        if (region.isEmpty()) {
+            return 0;
+        }
+        for (int id : region) {
+            if (!placed.containsKey(id)) {
+                return 0;
+            }
+        }
+        return region.size();
     }
 
     public PersonalLayout getLayout() {

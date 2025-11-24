@@ -1,6 +1,7 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.*;
+import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
 
@@ -26,6 +27,17 @@ public final class PlayerActions {
 
     public static void placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed) {
         player.placeTileFromStorage(storageId, cellId, dieUsed);
+        // 구역 완성 체크
+        PersonalBoard board = player.getBoard();
+        int regionSize = board.completedRegionSizeIfAny(cellId);
+
+        if (regionSize > 0) {
+            // 임시로 구역 크기만큼 점수를 준다.
+            player.addScore(regionSize);
+
+            System.out.println("[구역 완성] " + player.getName() + "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + regionSize + "점)"
+            );
+        }
         // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
     }
 

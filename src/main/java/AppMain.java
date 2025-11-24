@@ -10,7 +10,7 @@ public class AppMain {
 
         GameContext ctx = GameStarter.startNewGame(seed);
 
-        // 플레이어 2명
+
         PersonalBoard pb1 = new PersonalBoard(new PersonalLayout());
         pb1.setupInitialCastle(19);
         Player p1 = new Player(pb1, 3, "플레이어1");
@@ -28,6 +28,5 @@ public class AppMain {
         System.out.println(GameBoardConsoleView.render(ctx.layout(), ctx.boardState()));
         System.out.println("\n=== 최종 플레이어1 보드 ===");
         System.out.println(PlayerConsoleView.render(p1));
-        System.out.println("\n=== 최종 플레이어2 보드 ===");
     }
 }

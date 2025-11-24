@@ -19,15 +19,15 @@ public final class TurnManager {
         this.in = in;
     }
 
-    public void playerTurn(Player player) {
+    public void playerTurn(Player player, Phase phase) {
         System.out.println("\n===" + player.getName() + "의 턴 ===");
         int d1 = Dice.roll();
         int d2 = Dice.roll();
 
         System.out.println("굴린 주사위: " + d1 + ", " + d2);
 
-        handleDie(player, d1, 1);
-        handleDie(player, d2, 2);
+        handleDie(player, d1, 1, phase);
+        handleDie(player, d2, 2, phase);
     }
 
 
@@ -35,11 +35,11 @@ public final class TurnManager {
     }
 
 
-    private void handleDie(Player player, int die, int dieIndex) {
+    private void handleDie(Player player, int die, int dieIndex, Phase phase) {
         System.out.println("\n[" + dieIndex + "번째 주사위: " + die + "]");
         System.out.println("현재 일꾼 수 : " + player.getWorkers());
 
-        List<Option> options = buildOptionsForDie(player, die);
+        List<Option> options = buildOptionsForDie(player, die, phase);
 
         // 메뉴 출력
         for (int i = 0; i < options.size(); i++) {
@@ -58,7 +58,7 @@ public final class TurnManager {
     }
 
 
-    public List<Option> buildOptionsForDie(Player player, int baseDie) {
+    public List<Option> buildOptionsForDie(Player player, int baseDie, Phase phase) {
         List<Option> options = new ArrayList<>();
         BoardState boardState = ctx.boardState();
 
@@ -66,27 +66,30 @@ public final class TurnManager {
         int maxWorkersToUse = Math.min(3, availableWorkers);
 
         // 일꾼 0개 사용 (조정 없음)
-        addActionsForSetting(player, boardState, 0, baseDie, "", options);
+        addActionsForSetting(player, boardState, 0, baseDie, "", phase, options);
 
         // 일꾼 1~max 사용, 각 ± 방향
         for (int used = 1; used <= maxWorkersToUse; used++) {
             int minusDie = wrapAdd(baseDie, -used);
-            addActionsForSetting(player, boardState, used, minusDie, "[일꾼 " + used + "개 소모] ", options);
+            addActionsForSetting(player, boardState, used, minusDie, "[일꾼 " + used + "개 소모] ", phase, options);
 
+            if(used == 3){
+                break;  // 3인 경우는 한번만 표시
+            }
             int plusDie = wrapAdd(baseDie, +used);
-            addActionsForSetting(player, boardState, used, plusDie, "[일꾼 " + used + "개 소모] ", options);
+            addActionsForSetting(player, boardState, used, plusDie, "[일꾼 " + used + "개 소모] ", phase, options);
         }
 
         takeWorkersAction(player, options);
         return options;
     }
 
-    private void addActionsForSetting(Player player, BoardState boardState, int usedWorkers, int adjustedDie, String prefix, List<Option> options) {
+    private void addActionsForSetting(Player player, BoardState boardState, int usedWorkers, int adjustedDie, String prefix, Phase phase, List<Option> options) {
         takeTileFromBoardAction(player, boardState, usedWorkers, adjustedDie, prefix, options);
-        placeTileFromStorageAction(player, usedWorkers, adjustedDie, prefix, options);
+        placeTileFromStorageAction(player, usedWorkers, adjustedDie, prefix, phase, options);
     }
 
-    private static void placeTileFromStorageAction(Player player, int usedWorkers, int adjustedDie, String prefix, List<Option> options) {
+    private static void placeTileFromStorageAction(Player player, int usedWorkers, int adjustedDie, String prefix, Phase phase, List<Option> options) {
         if (player.getStorage().isEmpty()) {
             return;
         }
@@ -103,28 +106,41 @@ public final class TurnManager {
 
                 options.add(new Option(desc, () -> {
                     player.spendWorkers(usedWorkers);
-                    PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie);
+                    PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
                 }));
             }
         }
     }
 
 
-    private void takeTileFromBoardAction(Player player, BoardState boardState, int usedWorkers, int adjustedDie, String prefix, List<Option> options) {
+    private void takeTileFromBoardAction(Player player,
+                                         BoardState boardState,
+                                         int usedWorkers,
+                                         int adjustedDie,
+                                         String prefix,
+                                         List<Option> options) {
         if (player.getStorage().isFull()) {
             return;
         }
 
         for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
             BoardSlot slot = new BoardSlot(adjustedDie, slotIndex);
-            if (boardState.hasTile(slot)) {
-                int sIdx = slotIndex;
-                String desc = prefix + "섹션 " + adjustedDie + " 슬롯 " + slotIndex + "에서 타일 가져오기";
-                options.add(new Option(desc, () -> {
-                    player.spendWorkers(usedWorkers);
-                    PlayerActions.takeTileFromBoard(ctx, player, adjustedDie, sIdx);
-                }));
+
+            // 먼저 존재 여부 체크
+            if (!boardState.hasTile(slot)) {
+                continue;
             }
+
+            Tile tile = boardState.get(slot).orElseThrow(); // 이제는 반드시 존재
+
+            int sIdx = slotIndex;
+            String desc = prefix +
+                    "섹션 " + adjustedDie + " 슬롯 " + slotIndex + "에서 [" + tile.type() + "] 가져오기";
+
+            options.add(new Option(desc, () -> {
+                player.spendWorkers(usedWorkers);
+                PlayerActions.takeTileFromBoard(ctx, player, adjustedDie, sIdx);
+            }));
         }
     }
 

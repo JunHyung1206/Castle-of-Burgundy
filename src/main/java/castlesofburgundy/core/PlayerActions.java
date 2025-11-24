@@ -25,23 +25,54 @@ public final class PlayerActions {
         player.addToStorage(tile);
     }
 
-    public static void placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed) {
+    public static void placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed, Phase phase) {
         player.placeTileFromStorage(storageId, cellId, dieUsed);
         // 구역 완성 체크
         PersonalBoard board = player.getBoard();
         int regionSize = board.completedRegionSizeIfAny(cellId);
-
-        if (regionSize > 0) {
-            // 임시로 구역 크기만큼 점수를 준다.
-            player.addScore(regionSize);
-
-            System.out.println("[구역 완성] " + player.getName() + "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + regionSize + "점)"
-            );
+        if (regionSize <= 0) {
+            return; // 구역 완성 x
         }
+
+        int gained = phaseBonus(phase) + regionSizeBonus(regionSize);
+        player.addScore(gained);
+
+
+        System.out.println(
+                "[구역 완성] " + player.getName() +
+                        "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + gained + "점, 페이즈 " + phase + ")"
+        );
+
         // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
     }
 
+
+
     public static void takeWorkers(Player player) {
         player.gainWorkers(2);
+    }
+
+    private static int phaseBonus(Phase phase) {
+        return switch (phase) {
+            case A -> 10;
+            case B -> 8;
+            case C -> 6;
+            case D -> 4;
+            case E -> 2;
+        };
+    }
+
+    private static int regionSizeBonus(int size) {
+        return switch (size) {
+            case 1 -> 1;
+            case 2 -> 3;
+            case 3 -> 6;
+            case 4 -> 10;
+            case 5 -> 15;
+            case 6 -> 21;
+            case 7 -> 28;
+            case 8 -> 36;
+            default -> throw new IllegalArgumentException("지원하지 않는 구역 크기: " + size);
+        };
     }
 }

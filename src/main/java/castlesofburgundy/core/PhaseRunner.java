@@ -41,14 +41,11 @@ public class PhaseRunner {
             System.out.println(GameBoardConsoleView.render(ctx.layout(), boardState));
 
             // 각 플레이어 차례대로
-            for (int i = 0; i < players.length; i++) {
-                Player p = players[i];
+            for (Player player : players) {
+                System.out.println("\n현재 보드 상태 (" + player.getName() + ")");
+                System.out.println(PlayerConsoleView.render(player));
 
-
-                System.out.println("\n현재 보드 상태 (" + p.getName() + ")");
-                System.out.println(PlayerConsoleView.render(p));
-
-                turnManager.playerTurn(p);
+                turnManager.playerTurn(player, phase);
             }
         }
 

@@ -30,40 +30,78 @@ class RegionScoreTest {
         player = new Player(board, 3, "P1");
     }
 
-    @Test
-    @DisplayName("KNOWLEDGE 구역(13-8-4)을 모두 채우면 구역 크기(3)만큼 점수가 증가한다")
-    void completedKnowledgeRegionGivesScore() {
 
-        // KNOWLEDGE 구역의 대표 칸
+    @Test
+    @DisplayName("KNOWLEDGE 구역(13-8-4)을 페이즈 A에서 완성하면 16점을 얻는다")
+    void completedKnowledgeRegionGivesCorrectScore() {
+
         int startCell = 13;
 
+        // 1) 구역 전체 확인 (13, 8, 4)
         Set<Integer> region = board.sameTypeRegion(startCell);
         assertThat(region)
                 .containsExactlyInAnyOrder(13, 8, 4);
 
-        int regionSize = region.size(); // = 3
+        int regionSize = region.size(); // 3
         int beforeScore = player.getScore();
 
-
-        // 순서대로 배치하기 위해 리스트로 변환
+        // 2) 구역의 모든 셀에 Knowledge 타일 배치
         List<Integer> order = new ArrayList<>(region);
-
         for (int cellId : order) {
             PersonalCell cell = layout.get(cellId);
             TileType type = cell.type();
             int die = cell.die();
 
-            // 배치할 타일을 저장소에 넣는다
+            // 배치할 타일을 저장소에 넣고
             player.addToStorage(BaseTile.of(type, cellId));
 
-            // 저장소 index=0 의 타일을 해당 칸에 배치
-            PlayerActions.placeTileFromStorage(player, 0, cellId, die);
+            // 페이즈 A 라고 가정, workerUsed는 0
+            PlayerActions.placeTileFromStorage(player, 0, cellId, die, Phase.A);
         }
 
         int afterScore = player.getScore();
 
+        // 페이즈 A: +10 / 구역크기 3: +6 → 총 16점
+        int expected = 10 + 6;
         assertThat(afterScore - beforeScore)
-                .as("완성된 KNOWLEDGE 구역 크기(3)만큼 점수가 올라가야 한다")
-                .isEqualTo(regionSize);
+                .as("페이즈 A에서 크기 3 구역 완성 시 16점")
+                .isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("BUILDING 구역(12)을 페이즈 B에서 완성하면 9점을 얻는다")
+    void completedBuildingRegionGivesCorrectScore() {
+
+        int startCell = 12;
+
+
+        Set<Integer> region = board.sameTypeRegion(startCell);
+        assertThat(region)
+                .containsExactlyInAnyOrder(12);
+
+        int regionSize = region.size(); // 3
+        int beforeScore = player.getScore();
+
+        // 2) 구역의 모든 셀에 Knowledge 타일 배치
+        List<Integer> order = new ArrayList<>(region);
+        for (int cellId : order) {
+            PersonalCell cell = layout.get(cellId);
+            TileType type = cell.type();
+            int die = cell.die();
+
+            // 배치할 타일을 저장소에 넣고
+            player.addToStorage(BaseTile.of(type, cellId));
+
+            // 페이즈 A 라고 가정, workerUsed는 0
+            PlayerActions.placeTileFromStorage(player, 0, cellId, die, Phase.B);
+        }
+
+        int afterScore = player.getScore();
+
+        // 페이즈 A: +10 / 구역크기 3: +6 → 총 16점
+        int expected = 8 + 1;
+        assertThat(afterScore - beforeScore)
+                .as("페이즈 B에서 크기 1 구역 완성 시 9점")
+                .isEqualTo(expected);
     }
 }

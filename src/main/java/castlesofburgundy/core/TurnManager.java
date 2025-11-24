@@ -112,9 +112,9 @@ public final class TurnManager {
                 options.add(new Option(desc, () -> {
                     player.spendWorkers(usedWorkers);
 
-                    boolean extraAction = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+                    TilePlacementResult result = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
 
-                    if (extraAction) {
+                    if (result.grantExtraAction()) {
                         System.out.println("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
                         runCastleExtraAction(player, phase);
                     }

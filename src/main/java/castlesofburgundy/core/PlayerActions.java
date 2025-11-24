@@ -4,7 +4,6 @@ import castlesofburgundy.board.*;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
-import castlesofburgundy.tile.TileType;
 
 public final class PlayerActions {
     private PlayerActions() {
@@ -26,29 +25,57 @@ public final class PlayerActions {
         player.addToStorage(tile);
     }
 
-    public static boolean placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed, Phase phase) {
+    public static TilePlacementResult placeTileFromStorage(
+            Player player,
+            int storageId,
+            int cellId,
+            int dieUsed,
+            Phase phase
+    ) {
+        // 먼저 어떤 타일인지 꺼내고
         Tile tile = player.getStorage().view().get(storageId);
-        TileType type = tile.type();
 
+        // 배치(실제 보드에 놓기)
         player.placeTileFromStorage(storageId, cellId, dieUsed);
-        // 구역 완성 체크
+
+        // 1) 구역 완성 점수
         PersonalBoard board = player.getBoard();
         int regionSize = board.completedRegionSizeIfAny(cellId);
+
+        int regionScore = 0;
         if (regionSize > 0) {
-            int gained = phaseBonus(phase) + regionSizeBonus(regionSize);
-            player.addScore(gained);
+            regionScore = phaseBonus(phase) + regionSizeBonus(regionSize);
+            player.addScore(regionScore);
 
             System.out.println(
                     "[구역 완성] " + player.getName() +
-                            "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + gained + "점, 페이즈 " + phase + ")"
+                            "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + regionScore + "점, 페이즈 " + phase + ")"
             );
         }
 
-        // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
+        // 2) 타일 고유 효과
+        TileEffectContext effectCtx = new TileEffectContext(player, phase, cellId, dieUsed);
+        TilePlacementResult tileResult = tile.onPlaced(effectCtx);
 
-        return (type == TileType.CASTLE);
+        // 3) 타일 효과 결과(보너스 스코어/일꾼/은화) 적용
+        if (tileResult.bonusScore() != 0) {
+            player.addScore(tileResult.bonusScore());
+        }
+        if (tileResult.bonusWorkers() != 0) {
+            player.gainWorkers(tileResult.bonusWorkers());
+        }
+        if (tileResult.bonusSilver() != 0) {
+            player.addSilver(tileResult.bonusSilver());
+        }
+
+        // 4) "구역 점수"와 "타일 자체 보너스"를 합친 결과를 리턴
+        return new TilePlacementResult(
+                tileResult.grantExtraAction(),
+                tileResult.bonusWorkers(),
+                tileResult.bonusSilver(),
+                tileResult.bonusScore() + regionScore
+        );
     }
-
 
 
     public static void takeWorkers(Player player) {

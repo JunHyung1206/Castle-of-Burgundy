@@ -3,8 +3,6 @@ package castlesofburgundy.tile;
 import castlesofburgundy.core.TileEffectContext;
 import castlesofburgundy.core.TilePlacementResult;
 
-import java.util.Map;
-
 public final class CastleTile implements Tile {
     private final int id;
 
@@ -20,11 +18,6 @@ public final class CastleTile implements Tile {
     @Override
     public TileType type() {
         return TileType.CASTLE;
-    }
-
-    @Override
-    public Map<String, Object> props() {
-        return Map.of();
     }
 
     @Override

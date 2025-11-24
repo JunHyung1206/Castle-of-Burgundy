@@ -177,14 +177,13 @@ public final class TurnManager {
             List<Option> opts = buildCastleActionOptionsForDie(player, die, phase);
 
             for (Option opt : opts) {
-                String desc = "[성 추가 행동] " + opt.description();
+                String desc = "[성 추가 행동][주사위 " + die + "] " + opt.description();
                 extraOptions.add(new Option(desc, opt.run()));
             }
         }
 
-        // 중복 "일꾼 2개 받기" 옵션 같은 건 description 기준으로 한 번만 남기고 싶다면 여기서 dedupe 해도 됨
         if (extraOptions.isEmpty()) {
-            System.out.println("[성 효과] 현재 가능한 추가 행동이 없습니다.");
+            System.out.println("[성 추가 행동] 현재 가능한 추가 행동이 없습니다.");
             return;
         }
 
@@ -202,9 +201,6 @@ public final class TurnManager {
     public List<Option> buildCastleActionOptionsForDie(Player player, int baseDie, Phase phase) {
         List<Option> options = new ArrayList<>();
         BoardState boardState = ctx.boardState();
-
-        int availableWorkers = player.getWorkers();
-        int maxWorkersToUse = Math.min(3, availableWorkers);
 
         // 일꾼 0개 사용 (조정 없음)
         addActionsForSetting(player, boardState, 0, baseDie, "", phase, options);

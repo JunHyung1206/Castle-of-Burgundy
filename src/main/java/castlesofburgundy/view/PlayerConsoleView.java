@@ -53,6 +53,12 @@ public final class PlayerConsoleView {
 
         String s = storageView(player.getStorage());
         sb.append(s);
+
+        sb.append("\n일꾼 수: ").append(player.getWorkers())
+                .append(", 은화 수: ").append(player.getSilver())
+                .append(", 점수: ").append(player.getScore())
+                .append("\n");
+
         return sb.toString();
     }
 

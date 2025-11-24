@@ -4,6 +4,7 @@ import castlesofburgundy.board.*;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
+import castlesofburgundy.tile.TileType;
 
 public final class PlayerActions {
     private PlayerActions() {
@@ -25,25 +26,27 @@ public final class PlayerActions {
         player.addToStorage(tile);
     }
 
-    public static void placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed, Phase phase) {
+    public static boolean placeTileFromStorage(Player player, int storageId, int cellId, int dieUsed, Phase phase) {
+        Tile tile = player.getStorage().view().get(storageId);
+        TileType type = tile.type();
+
         player.placeTileFromStorage(storageId, cellId, dieUsed);
         // 구역 완성 체크
         PersonalBoard board = player.getBoard();
         int regionSize = board.completedRegionSizeIfAny(cellId);
-        if (regionSize <= 0) {
-            return; // 구역 완성 x
+        if (regionSize > 0) {
+            int gained = phaseBonus(phase) + regionSizeBonus(regionSize);
+            player.addScore(gained);
+
+            System.out.println(
+                    "[구역 완성] " + player.getName() +
+                            "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + gained + "점, 페이즈 " + phase + ")"
+            );
         }
 
-        int gained = phaseBonus(phase) + regionSizeBonus(regionSize);
-        player.addScore(gained);
-
-
-        System.out.println(
-                "[구역 완성] " + player.getName() +
-                        "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + gained + "점, 페이즈 " + phase + ")"
-        );
-
         // TODO: 배치 효과(성/동물/건물/지식 등)는 이후 단계에서 훅 추가
+
+        return (type == TileType.CASTLE);
     }
 
 

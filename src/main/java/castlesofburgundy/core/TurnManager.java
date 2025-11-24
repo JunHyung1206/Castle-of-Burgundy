@@ -73,7 +73,7 @@ public final class TurnManager {
             int minusDie = wrapAdd(baseDie, -used);
             addActionsForSetting(player, boardState, used, minusDie, "[일꾼 " + used + "개 소모] ", phase, options);
 
-            if(used == 3){
+            if (used == 3) {
                 break;  // 3인 경우는 한번만 표시
             }
             int plusDie = wrapAdd(baseDie, +used);
@@ -89,7 +89,12 @@ public final class TurnManager {
         placeTileFromStorageAction(player, usedWorkers, adjustedDie, prefix, phase, options);
     }
 
-    private static void placeTileFromStorageAction(Player player, int usedWorkers, int adjustedDie, String prefix, Phase phase, List<Option> options) {
+    private void placeTileFromStorageAction(Player player,
+                                            int usedWorkers,
+                                            int adjustedDie,
+                                            String prefix,
+                                            Phase phase,
+                                            List<Option> options) {
         if (player.getStorage().isEmpty()) {
             return;
         }
@@ -106,7 +111,13 @@ public final class TurnManager {
 
                 options.add(new Option(desc, () -> {
                     player.spendWorkers(usedWorkers);
-                    PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+
+                    boolean extraAction = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+
+                    if (extraAction) {
+                        System.out.println("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
+                        runCastleExtraAction(player, phase);
+                    }
                 }));
             }
         }
@@ -126,21 +137,16 @@ public final class TurnManager {
         for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
             BoardSlot slot = new BoardSlot(adjustedDie, slotIndex);
 
-            // 먼저 존재 여부 체크
-            if (!boardState.hasTile(slot)) {
-                continue;
+            Tile tile = boardState.get(slot).orElse(null);
+            if (tile != null) {
+                int sIdx = slotIndex;
+                String desc = prefix + "섹션 " + adjustedDie + " 슬롯 " + slotIndex
+                        + "에서 타일 " + tile.type() + " 가져오기";
+                options.add(new Option(desc, () -> {
+                    player.spendWorkers(usedWorkers);
+                    PlayerActions.takeTileFromBoard(ctx, player, adjustedDie, sIdx);
+                }));
             }
-
-            Tile tile = boardState.get(slot).orElseThrow(); // 이제는 반드시 존재
-
-            int sIdx = slotIndex;
-            String desc = prefix +
-                    "섹션 " + adjustedDie + " 슬롯 " + slotIndex + "에서 [" + tile.type() + "] 가져오기";
-
-            options.add(new Option(desc, () -> {
-                player.spendWorkers(usedWorkers);
-                PlayerActions.takeTileFromBoard(ctx, player, adjustedDie, sIdx);
-            }));
         }
     }
 
@@ -159,5 +165,49 @@ public final class TurnManager {
             }
             System.out.println("잘못된 입력입니다.");
         }
+    }
+
+
+    // 성 추가 행동: 주사위 입력 없이, 가능한 모든 액션을 보여준다.
+    public void runCastleExtraAction(Player player, Phase phase) {
+        // 주사위 1~6을 모두 가상의 눈으로 돌려본다
+        List<Option> extraOptions = new ArrayList<>();
+
+        for (int die = 1; die <= 6; die++) {
+            List<Option> opts = buildCastleActionOptionsForDie(player, die, phase);
+
+            for (Option opt : opts) {
+                String desc = "[성 추가 행동] " + opt.description();
+                extraOptions.add(new Option(desc, opt.run()));
+            }
+        }
+
+        // 중복 "일꾼 2개 받기" 옵션 같은 건 description 기준으로 한 번만 남기고 싶다면 여기서 dedupe 해도 됨
+        if (extraOptions.isEmpty()) {
+            System.out.println("[성 효과] 현재 가능한 추가 행동이 없습니다.");
+            return;
+        }
+
+        System.out.println("\n[성 추가 행동 선택]");
+        for (int i = 0; i < extraOptions.size(); i++) {
+            System.out.println(i + ") " + extraOptions.get(i).description());
+        }
+
+        int choice = readChoice(extraOptions.size());
+        Option selected = extraOptions.get(choice);
+        selected.run().run();
+        System.out.println("=> [성 추가 행동] 실행: " + selected.description());
+    }
+
+    public List<Option> buildCastleActionOptionsForDie(Player player, int baseDie, Phase phase) {
+        List<Option> options = new ArrayList<>();
+        BoardState boardState = ctx.boardState();
+
+        int availableWorkers = player.getWorkers();
+        int maxWorkersToUse = Math.min(3, availableWorkers);
+
+        // 일꾼 0개 사용 (조정 없음)
+        addActionsForSetting(player, boardState, 0, baseDie, "", phase, options);
+        return options;
     }
 }

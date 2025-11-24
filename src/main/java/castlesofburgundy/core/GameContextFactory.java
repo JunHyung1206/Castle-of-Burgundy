@@ -6,7 +6,7 @@ import castlesofburgundy.tile.TileType;
 
 import java.util.Map;
 
-public final class GameStarter {
+public final class GameContextFactory {
 
     public static GameContext startNewGame(long seed) {
         GameBoardLayout layout = new GameBoardLayout();

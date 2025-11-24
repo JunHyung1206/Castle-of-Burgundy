@@ -8,7 +8,7 @@ public class AppMain {
     public static void main(String[] args) {
         long seed = 42L;
 
-        GameContext ctx = GameStarter.startNewGame(seed);
+        GameContext ctx = GameContextFactory.startNewGame(seed);
 
 
         PersonalBoard pb1 = new PersonalBoard(new PersonalLayout());

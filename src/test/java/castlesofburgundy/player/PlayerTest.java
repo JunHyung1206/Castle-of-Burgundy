@@ -18,7 +18,7 @@ class PlayerTest {
     void setUp() {
         PersonalBoard personalBoard = new PersonalBoard(new PersonalLayout());
         personalBoard.setupInitialCastle(19);
-        player = new Player(personalBoard, 3, "player1");
+        player = new Player(personalBoard, 3, "player1", 2);
     }
 
     @Test
@@ -71,34 +71,54 @@ class PlayerTest {
         System.out.println(PlayerConsoleView.render(player));
     }
 
+
     @Test
-    @DisplayName("일꾼을 사용해 주사위 눈을 ±1, ±2 조정한다")
-    void adjustDieWithWorkers() {
-        PersonalBoard board = new PersonalBoard(new PersonalLayout());
-        board.setupInitialCastle(19);
-        Player p = new Player(board, 3, "p");
+    @DisplayName("일꾼을 사용하면 그만큼 감소한다.")
+    void spendWorkersSuccessTest() {
+        // given
+        assertThat(player.getWorkers()).isEqualTo(2);
 
-        p.gainWorkers(3);
+        // when
+        int remain = player.spendWorkers(1);
 
-        int r1 = p.spendWorkersToAdjust(3, 1, +1); // +1
-        assertThat(r1).isEqualTo(4);
+        // then
+        assertThat(remain).isEqualTo(1);
+        assertThat(player.getWorkers()).isEqualTo(1);
 
-        int r2 = p.spendWorkersToAdjust(6, 2, +1); // +2, 6→2(랩)
-        assertThat(r2).isEqualTo(2);
+        // 한 번 더 사용
+        remain = player.spendWorkers(1);
+        assertThat(remain).isEqualTo(0);
+        assertThat(player.getWorkers()).isEqualTo(0);
     }
 
+    @Test
+    @DisplayName("가지고 있는 일꾼보다 많이 쓰려고 하면 예외가 발생한다.")
+    void spendWorkersTooManyTest() {
+        // 현재 2개 있음
+        assertThat(player.getWorkers()).isEqualTo(2);
+
+        assertThrows(IllegalStateException.class, () -> player.spendWorkers(3));
+        // 실패 후에도 일꾼 수는 그대로여야 함
+        assertThat(player.getWorkers()).isEqualTo(2);
+    }
 
     @Test
-    @DisplayName("일꾼이 부족하다면 주사위 눈을 조정할 수 없다.")
-    void failUseWorkers() {
-        PersonalBoard board = new PersonalBoard(new PersonalLayout());
-        board.setupInitialCastle(19);
-        Player p = new Player(board, 3, "p");
+    @DisplayName("일꾼 사용 개수가 음수이면 예외가 발생한다.")
+    void spendWorkersNegativeTest() {
+        assertThrows(IllegalArgumentException.class, () -> player.spendWorkers(-1));
+    }
 
-        p.gainWorkers(2);
+    @Test
+    @DisplayName("일꾼을 얻으면 증가한다.")
+    void gainWorkersTest() {
+        // 기본 2개
+        assertThat(player.getWorkers()).isEqualTo(2);
 
-        assertThrows(IllegalStateException.class,
-                () -> p.spendWorkersToAdjust(6, 3, +1));
+        player.gainWorkers(2);
+        assertThat(player.getWorkers()).isEqualTo(4);
+
+        player.spendWorkers(1);
+        assertThat(player.getWorkers()).isEqualTo(3);
     }
 
 }

@@ -7,39 +7,34 @@ public final class Player {
     private final Storage storage;
     private final String name;
 
-    private int workers = 0;
+    private int workers;
     private int silver = 0;
     private int score = 0;
 
-    public Player(PersonalBoard board, int storageCapacity, String name) {
+    public Player(PersonalBoard board, int storageCapacity, String name, int workers) {
         this.board = board;
         this.storage = new Storage(storageCapacity);
         this.name = name;
+        this.workers = workers;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    // 규칙: 언제든지 일꾼 1개로 주사위 하나에 +/-1 (1↔6 랩). 여러 개 중첩 가능
-    public int spendWorkersToAdjust(int die, int workersToSpend, int sign) {
-        if (workersToSpend < 0) {
-            throw new IllegalArgumentException("workersToSpend >= 0");
-        }
-        if (workers < workersToSpend) {
-            throw new IllegalStateException("일꾼 부족");
-        }
-        workers -= workersToSpend;
-        int delta = (sign >= 0 ? +workersToSpend : -workersToSpend);
-        return wrapAdd(die, delta);
-    }
-
-    private int wrapAdd(int face, int delta) {
-        return ((face - 1 + delta) % 6 + 6) % 6 + 1;
+    public Player(PersonalBoard board, int storageCapacity, String name) {
+        this(board, storageCapacity, name, 2);
     }
 
     public void addToStorage(Tile tile) {
         storage.add(tile);
+    }
+
+    public int spendWorkers(int usedWorkers) {
+        if (usedWorkers < 0) {
+            throw new IllegalArgumentException("workersToSpend >= 0");
+        }
+        if (workers < usedWorkers) {
+            throw new IllegalStateException("일꾼 부족");
+        }
+        workers -= usedWorkers;
+        return workers;
     }
 
     public void placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
@@ -65,5 +60,22 @@ public final class Player {
 
     public PersonalBoard getBoard() {
         return board;
+    }
+
+
+    public int getWorkers() {
+        return workers;
+    }
+
+    public int getSilver() {
+        return silver;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public String getName() {
+        return name;
     }
 }

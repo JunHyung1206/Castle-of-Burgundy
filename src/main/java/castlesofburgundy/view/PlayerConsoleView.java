@@ -92,4 +92,32 @@ public final class PlayerConsoleView {
         }
         return sb.toString();
     }
+
+    public static String renderBoardOnly(PersonalBoard board) {
+        PersonalLayout layout = board.getLayout();
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n=== Personal Board ===\n");
+
+        int[][] g = PersonalGrid.GRID;
+        for (int r = 0; r < g.length; r++) {
+            if ((r & 1) == 0) sb.append(" ".repeat(6)); // 비슷한 indentation
+
+            for (int c = 0; c < g[r].length; c++) {
+                int id = g[r][c];
+                if (id <= 0) {
+                    sb.append("              ");
+                    continue;
+                }
+
+                PersonalCell cell = layout.get(id);
+                boolean placed = board.isOccupied(id);
+
+                String inner = id + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die();
+                sb.append(box(inner, cell.type(), placed)).append(" ");
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
 }

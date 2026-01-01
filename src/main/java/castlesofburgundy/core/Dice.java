@@ -1,9 +1,13 @@
 package castlesofburgundy.core;
 
-import camp.nextstep.edu.missionutils.Randoms;
+
+import java.util.Random;
 
 public class Dice {
     public static int roll() {
-        return Randoms.pickNumberInRange(1, 6);
+        Random random = new Random();
+
+        return random.nextInt() % 6 + 1;
+
     }
 }

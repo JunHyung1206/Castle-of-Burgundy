@@ -26,7 +26,7 @@ public class PhaseRunner {
 
     public void runPhase(Phase phase, Player[] players) {
 
-        roundManager.startPhase(phase);
+        startNewPhase();
         System.out.println("\n================================");
         System.out.println("=== Phase " + phase + " 시작 ===");
         System.out.println("================================");
@@ -50,5 +50,14 @@ public class PhaseRunner {
         }
 
         System.out.println("\n=== Phase " + phase + " 종료 ===");
+    }
+
+    /**
+     * 페이즈 시작 준비: 보드의 육각 타일을 전부 교체하고(공급원에서 다시 채움)
+     * 라운드 카운터를 초기화한다.
+     */
+    private void startNewPhase() {
+        ctx.boardState().fillAllFromSupply(ctx.tileSupplier());
+        roundManager.resetForNewPhase();
     }
 }

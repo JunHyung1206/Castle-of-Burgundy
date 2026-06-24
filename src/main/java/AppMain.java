@@ -14,7 +14,7 @@ public class AppMain {
         Player[] players = PlayerSetup.setupPlayers(in, 1); // 나중에 2로 바꾸면 2인플
 
         TurnManager tm = new TurnManager(ctx, in);
-        RoundManager rm = new RoundManager(ctx.boardState(), ctx.tileSupplier());
+        RoundManager rm = new RoundManager();
         PhaseRunner pr = new PhaseRunner(ctx, rm, tm);
 
         pr.runAllPhases(players);

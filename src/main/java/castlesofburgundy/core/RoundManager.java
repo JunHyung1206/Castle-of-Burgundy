@@ -1,56 +1,33 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-
-import java.util.Objects;
-
 /**
- * 페이즈/라운드 진행과 보드 리셋/보급만 담당하는 최소 골격.
- * - 페이즈 시작: 보드의 섹션 타일 전부 제거 → 공급원에서 다시 채움
- * - 라운드: 1..5 카운팅만 수행(현재는 흰 주사위/상품 무시)
+ * 한 페이즈 = 5라운드. 라운드 진행 카운팅만 담당한다.
+ * (보드 리셋/보급은 페이즈 진행을 지휘하는 PhaseRunner의 책임)
  */
 public class RoundManager {
-    private final BoardState boardState;
-    private final TileSupplier tileSupply;
+    private static final int ROUNDS_PER_PHASE = 5;
 
-    private Phase currentPhase = Phase.A;
-    private int roundIndex = -1; // 0..4
-
-    public RoundManager(BoardState sectionBoard, TileSupplier tileSupply) {
-        this.boardState = Objects.requireNonNull(sectionBoard);
-        this.tileSupply = Objects.requireNonNull(tileSupply);
-    }
-
-    public Phase phase() {
-        return currentPhase;
-    }
-
-    public int roundIndex() {
-        return roundIndex;
-    }
+    private int roundIndex = -1; // 0..4, -1 = 페이즈 시작 전
 
     /**
-     * 페이즈 시작: 섹션 타일 리셋 & 채우기
+     * 새 페이즈를 위해 라운드 카운터를 초기화.
      */
-    public void startPhase(Phase phase) {
-        this.currentPhase = Objects.requireNonNull(phase);
-        boardState.removeAll();
-        boardState.fillAllFromSupply(tileSupply);
-        this.roundIndex = -1;
+    public void resetForNewPhase() {
+        roundIndex = -1;
     }
 
     /**
-     * 다음 라운드로 이동. 1..5 반환
+     * 다음 라운드로 이동. 1..5 반환.
      */
     public int nextRound() {
-        if (roundIndex >= 4) {
-            throw new IllegalStateException("이미 5라운드가 끝났습니다.");
+        if (!hasMoreRounds()) {
+            throw new IllegalStateException("이미 " + ROUNDS_PER_PHASE + "라운드가 끝났습니다.");
         }
         roundIndex++;
         return roundIndex + 1;
     }
 
     public boolean hasMoreRounds() {
-        return roundIndex < 4;
+        return roundIndex < ROUNDS_PER_PHASE - 1;
     }
 }

@@ -2,6 +2,7 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.player.Player;
@@ -110,5 +111,25 @@ class TurnManagerTest {
 
         // 일꾼 1개가 소모됐는지 확인
         assertThat(p.getWorkers()).isEqualTo(beforeWorkers - 1);
+    }
+
+    @Test
+    @DisplayName("액션 선택지 전에 현재 타일 저장소와 상품 상태를 함께 보여준다")
+    void playerTurnShowsCompactContextBeforeChoices() {
+        GameContext ctx = simpleContext();
+        ctx.boardState().addGoods(3, GoodsColor.PINK);
+        RecordingGameUi ui = new RecordingGameUi();
+        ui.scriptChoices(0, 0);
+        TurnManager tm = new TurnManager(ctx, ui, 2);
+        Player p = newPlayer();
+        p.addToStorage(BaseTile.of(TileType.SHIP, 100));
+        p.addGoods(GoodsColor.RED);
+
+        tm.playerTurn(p, Phase.A);
+
+        assertThat(ui.messaged("[현재 상태]")).isTrue();
+        assertThat(ui.messaged("타일 저장소")).isTrue();
+        assertThat(ui.messaged("보유 상품")).isTrue();
+        assertThat(ui.messaged("창고 상품")).isTrue();
     }
 }

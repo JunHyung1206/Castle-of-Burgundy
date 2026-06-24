@@ -59,6 +59,7 @@ public final class TurnManager {
         ui.message("현재 일꾼 수 : " + player.getWorkers());
 
         List<Action> actions = buildOptionsForDie(player, die, phase);
+        ui.message(renderActionContext(player));
 
         Action selected = chooseAction(actions);
         boolean grantsExtraAction = selected.apply().getAsBoolean();
@@ -238,6 +239,58 @@ public final class TurnManager {
             PlayerActions.takeWorkers(player);
             return false;
         }));
+    }
+
+    private String renderActionContext(Player player) {
+        return """
+                [현재 상태]
+                타일 저장소: %s
+                보유 상품: %s
+                창고 상품: %s
+                은화/점수: %d/%d
+                """.formatted(
+                storageSummary(player),
+                goodsSummary(player),
+                warehouseGoodsSummary(),
+                player.getSilver(),
+                player.getScore()
+        );
+    }
+
+    private String storageSummary(Player player) {
+        List<Tile> stored = player.storedTiles();
+        if (stored.isEmpty()) {
+            return "(empty)";
+        }
+
+        List<String> parts = new ArrayList<>();
+        for (int i = 0; i < stored.size(); i++) {
+            Tile tile = stored.get(i);
+            parts.add("#" + i + "=" + tile.type() + "(" + tile.id() + ")");
+        }
+        return String.join(", ", parts);
+    }
+
+    private String goodsSummary(Player player) {
+        List<String> parts = new ArrayList<>();
+        for (GoodsColor color : GoodsColor.values()) {
+            int count = player.goods().count(color);
+            if (count > 0) {
+                parts.add(color + "=" + count);
+            }
+        }
+        return parts.isEmpty() ? "(empty)" : String.join(", ", parts);
+    }
+
+    private String warehouseGoodsSummary() {
+        List<String> parts = new ArrayList<>();
+        for (int warehouse = 1; warehouse <= 6; warehouse++) {
+            List<GoodsColor> goods = ctx.boardState().goodsAt(warehouse);
+            if (!goods.isEmpty()) {
+                parts.add(warehouse + "=" + goods);
+            }
+        }
+        return parts.isEmpty() ? "(empty)" : String.join(", ", parts);
     }
 
     // 성 추가 행동: 주사위 입력 없이, 가능한 모든 액션을 보여준다.

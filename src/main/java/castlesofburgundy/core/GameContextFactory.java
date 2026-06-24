@@ -11,21 +11,21 @@ public final class GameContextFactory {
     public static GameContext startNewGame(long seed) {
         GameBoardLayout layout = new GameBoardLayout();
 
-        // 2) 타입별 공급 수량 (예시값; 필요 시 조정)
+        // 타입별 공급 수량 = 룰북의 색타일(검은색 중앙창고 몫 제외) 수량
+        // 건물40 가축20 수도원20 성14 광산10 배20 (검은색: 건물16 가축8 수도원6 성2 광산2 배6)
         Map<TileType, Integer> counts = Map.of(
-                TileType.CASTLE, 8,
-                TileType.SHIP, 100,
-                TileType.MINE, 100,
-                TileType.ANIMAL, 200,
-                TileType.BUILDING, 280,
-                TileType.KNOWLEDGE, 180
+                TileType.CASTLE, 14,
+                TileType.SHIP, 20,
+                TileType.MINE, 10,
+                TileType.ANIMAL, 20,
+                TileType.BUILDING, 40,
+                TileType.KNOWLEDGE, 20
         );
 
-        // 3) 타일 공급 섹션에 맞게 채우기
         TileSupplier supplier = new TileSupplier(counts, seed);
+        // 보드 채우기는 페이즈 시작(PhaseRunner)에서 하므로 여기서는 비워둔 채로 둔다.
         BoardState boardState = new BoardState(layout);
 
-        boardState.fillAllFromSupply(supplier);
         return new GameContext(seed, layout, boardState, supplier, new Dice(seed));
     }
 }

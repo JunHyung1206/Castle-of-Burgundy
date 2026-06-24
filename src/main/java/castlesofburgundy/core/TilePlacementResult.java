@@ -8,13 +8,4 @@ public record TilePlacementResult(
 ) {
     public static final TilePlacementResult NONE =
             new TilePlacementResult(false, 0, 0, 0);
-
-    public TilePlacementResult add(TilePlacementResult other) {
-        return new TilePlacementResult(
-                this.grantExtraAction || other.grantExtraAction,
-                this.bonusWorkers + other.bonusWorkers,
-                this.bonusSilver + other.bonusSilver,
-                this.bonusScore + other.bonusScore
-        );
-    }
 }

@@ -24,7 +24,7 @@ class TurnManagerTest {
         TileSupplier supplier = new TileSupplier(1L);
         BoardState boardState = new BoardState(layout);
         boardState.fillAllFromSupply(supplier);
-        return new GameContext(1L, layout, boardState, supplier, new Dice(1L));
+        return new GameContext(1L, layout, boardState, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
     }
 
     private Player newPlayer() {

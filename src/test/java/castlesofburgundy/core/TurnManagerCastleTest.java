@@ -2,6 +2,7 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.goods.GoodsSupply;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.player.Player;
@@ -28,7 +29,7 @@ class TurnManagerCastleTest {
         GameBoardLayout layout = new GameBoardLayout();
         BoardState emptyBoard = new BoardState(layout); // 일부러 채우지 않음 → 보드에서 가져오기 옵션 배제
         TileSupplier supplier = new TileSupplier(1L);
-        ctx = new GameContext(1L, layout, emptyBoard, supplier, new Dice(1L));
+        ctx = new GameContext(1L, layout, emptyBoard, supplier, new Dice(1L), new GoodsSupply(1L));
 
         ui = new RecordingGameUi();
 

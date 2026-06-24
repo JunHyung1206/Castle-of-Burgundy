@@ -1,8 +1,11 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
+import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.TileType;
+
+import java.util.List;
 
 public class PhaseRunner {
 
@@ -10,12 +13,18 @@ public class PhaseRunner {
     private final RoundManager roundManager;
     private final TurnManager turnManager;
     private final GameUi ui;
+    private final TurnOrder turnOrder;
 
     public PhaseRunner(GameContext ctx, RoundManager roundManager, TurnManager turnManager, GameUi ui) {
+        this(ctx, roundManager, turnManager, ui, null);
+    }
+
+    public PhaseRunner(GameContext ctx, RoundManager roundManager, TurnManager turnManager, GameUi ui, TurnOrder turnOrder) {
         this.ctx = ctx;
         this.roundManager = roundManager;
         this.turnManager = turnManager;
         this.ui = ui;
+        this.turnOrder = turnOrder;
     }
 
     public void runAllPhases(Player[] players) {
@@ -38,11 +47,14 @@ public class PhaseRunner {
             int round = roundManager.nextRound();
             ui.message("\n--- Phase " + phase + " / Round " + round + " ---");
 
+            // 흰 주사위: 이번 라운드 상품을 해당 번호 창고에 배치
+            placeRoundGoods();
+
             // 라운드 시작 시 시장 상태 출력
             ui.showGameBoard(ctx.layout(), boardState);
 
             // 각 플레이어 차례대로
-            for (Player player : players) {
+            for (Player player : playersForRound(players)) {
                 ui.message("\n현재 보드 상태 (" + player.getName() + ")");
                 ui.showPlayer(player);
 
@@ -53,6 +65,19 @@ public class PhaseRunner {
         endPhase(players);
 
         ui.message("\n=== Phase " + phase + " 종료 ===");
+    }
+
+    /**
+     * 흰 주사위 단계: 주사위 눈에 해당하는 창고에 이번 라운드 상품 한 개를 놓는다.
+     *
+     * @return 상품을 놓은 창고 번호(1~6)
+     */
+    int placeRoundGoods() {
+        int whiteDie = ctx.dice().roll();
+        GoodsColor goods = ctx.goodsSupply().draw();
+        ctx.boardState().addGoods(whiteDie, goods);
+        ui.message("흰 주사위 " + whiteDie + " → 창고 " + whiteDie + "에 상품(" + goods + ") 배치");
+        return whiteDie;
     }
 
     /**
@@ -75,5 +100,12 @@ public class PhaseRunner {
     private void startNewPhase() {
         ctx.boardState().fillAllFromSupply(ctx.tileSupplier());
         roundManager.resetForNewPhase();
+    }
+
+    private List<Player> playersForRound(Player[] players) {
+        if (turnOrder == null) {
+            return List.of(players);
+        }
+        return turnOrder.currentOrder();
     }
 }

@@ -1,5 +1,6 @@
 package castlesofburgundy.core;
 
+import castlesofburgundy.goods.GoodsSupply;
 import castlesofburgundy.player.*;
 import castlesofburgundy.tile.TileType;
 
@@ -8,8 +9,9 @@ public final class PlayerSetup {
     private PlayerSetup() {}
 
     private static final int STORAGE_CAPACITY = 3;
+    private static final int STARTING_GOODS = 3;
 
-    public static Player[] setupPlayers(GameUi ui) {
+    public static Player[] setupPlayers(GameUi ui, GoodsSupply goodsSupply) {
         int playerCount = readPlayerCount(ui);
         Player[] players = new Player[playerCount];
         PersonalLayout layout = new PersonalLayout();  // 공통 레이아웃 재사용
@@ -32,10 +34,12 @@ public final class PlayerSetup {
             ui.message("\n--- 성 배치 완료 (" + name + ") ---");
             ui.showPersonalBoard(board);
 
-            // 시작 플레이어부터 일꾼 1, 2, 3, 4개 + 은화 1개
-            // TODO: 무작위 상품 타일 3개 지급 (상품 시스템 구현 후)
+            // 시작 플레이어부터 일꾼 1, 2, 3, 4개 + 은화 1개 + 무작위 상품 3개
             Player player = new Player(board, STORAGE_CAPACITY, name, i + 1);
             player.addSilver(1);
+            for (int g = 0; g < STARTING_GOODS; g++) {
+                player.addGoods(goodsSupply.draw());
+            }
             players[i] = player;
         }
         return players;

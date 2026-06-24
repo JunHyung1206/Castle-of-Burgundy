@@ -23,7 +23,7 @@ class PhaseEndTest {
         GameBoardLayout layout = new GameBoardLayout();
         BoardState boardState = new BoardState(layout);
         TileSupplier supplier = new TileSupplier(1L);
-        GameContext ctx = new GameContext(1L, layout, boardState, supplier, new Dice(1L));
+        GameContext ctx = new GameContext(1L, layout, boardState, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
 
         ui = new RecordingGameUi();
         TurnManager tm = new TurnManager(ctx, ui);

@@ -12,11 +12,12 @@ public class AppMain {
 
         GameContext ctx = GameContextFactory.startNewGame(seed);
 
-        Player[] players = PlayerSetup.setupPlayers(ui);
+        Player[] players = PlayerSetup.setupPlayers(ui, ctx.goodsSupply());
 
-        TurnManager tm = new TurnManager(ctx, ui);
+        TurnOrder turnOrder = new TurnOrder(players);
+        TurnManager tm = new TurnManager(ctx, ui, players.length, turnOrder);
         RoundManager rm = new RoundManager();
-        PhaseRunner pr = new PhaseRunner(ctx, rm, tm, ui);
+        PhaseRunner pr = new PhaseRunner(ctx, rm, tm, ui, turnOrder);
 
         pr.runAllPhases(players);
 

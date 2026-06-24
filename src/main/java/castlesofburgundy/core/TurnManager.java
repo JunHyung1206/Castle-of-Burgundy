@@ -2,8 +2,10 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardSlot;
 import castlesofburgundy.board.BoardState;
+import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
+import castlesofburgundy.tile.TileType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +14,25 @@ import java.util.function.BooleanSupplier;
 public final class TurnManager {
     private final GameContext ctx;
     private final GameUi ui;
+    private final int playerCount;
+    private final TurnOrder turnOrder;
 
     public TurnManager(GameContext ctx, GameUi ui) {
+        this(ctx, ui, 1, null);
+    }
+
+    public TurnManager(GameContext ctx, GameUi ui, int playerCount) {
+        this(ctx, ui, playerCount, null);
+    }
+
+    public TurnManager(GameContext ctx, GameUi ui, int playerCount, TurnOrder turnOrder) {
+        if (playerCount < 1) {
+            throw new IllegalArgumentException("playerCount >= 1");
+        }
         this.ctx = ctx;
         this.ui = ui;
+        this.playerCount = playerCount;
+        this.turnOrder = turnOrder;
     }
 
     public void playerTurn(Player player, Phase phase) {
@@ -85,6 +102,7 @@ public final class TurnManager {
     private void addActionsForSetting(Player player, BoardState boardState, int usedWorkers, int adjustedDie, String prefix, Phase phase, List<Action> actions) {
         takeTileFromBoardAction(player, boardState, usedWorkers, adjustedDie, prefix, actions);
         placeTileFromStorageAction(player, usedWorkers, adjustedDie, prefix, phase, actions);
+        sellGoodsAction(player, usedWorkers, adjustedDie, prefix, actions);
     }
 
     private void placeTileFromStorageAction(Player player,
@@ -109,6 +127,9 @@ public final class TurnManager {
                 actions.add(new Action(desc, () -> {
                     player.spendWorkers(usedWorkers);
                     PlacementOutcome outcome = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+                    if (t.type() == TileType.SHIP) {
+                        handleShipPlacement(player);
+                    }
                     if (outcome.completedRegionSize() > 0) {
                         ui.message("[구역 완성] " + player.getName()
                                 + "이(가) 크기 " + outcome.completedRegionSize()
@@ -118,6 +139,71 @@ public final class TurnManager {
                 }));
             }
         }
+    }
+
+    private void sellGoodsAction(Player player,
+                                 int usedWorkers,
+                                 int adjustedDie,
+                                 String prefix,
+                                 List<Action> actions) {
+        GoodsColor color = GoodsColor.forDie(adjustedDie);
+        int count = player.goods().count(color);
+        if (count == 0) {
+            return;
+        }
+
+        String desc = prefix + color + " 상품 판매 (" + count + "개)";
+        actions.add(new Action(desc, () -> {
+            player.spendWorkers(usedWorkers);
+            int sold = PlayerActions.sellGoods(player, color, playerCount);
+            ui.message("[상품 판매] " + color + " " + sold + "개 → 은화 +1, 점수 +" + (sold * playerCount));
+            return false;
+        }));
+    }
+
+    private void handleShipPlacement(Player player) {
+        List<Integer> warehouses = new ArrayList<>();
+        List<String> options = new ArrayList<>();
+        for (int warehouse = 1; warehouse <= 6; warehouse++) {
+            List<GoodsColor> goods = ctx.boardState().goodsAt(warehouse);
+            if (!goods.isEmpty()) {
+                warehouses.add(warehouse);
+                options.add("창고 " + warehouse + " 상품 가져오기 " + goods);
+            }
+        }
+
+        if (warehouses.isEmpty()) {
+            ui.message("[배] 가져올 상품이 있는 창고가 없습니다.");
+            advanceTurnOrder(player);
+            return;
+        }
+
+        int choice = ui.chooseIndex(options);
+        int warehouse = warehouses.get(choice);
+        List<GoodsColor> taken = ctx.boardState().takeAllGoods(warehouse);
+        int stored = 0;
+        int dropped = 0;
+        for (GoodsColor color : taken) {
+            if (player.addGoods(color)) {
+                stored++;
+            } else {
+                dropped++;
+            }
+        }
+
+        ui.message("[배] 창고 " + warehouse + "에서 상품 " + stored + "개를 가져왔습니다.");
+        if (dropped > 0) {
+            ui.message("[배] 상품 저장소 색 제한으로 " + dropped + "개는 보관하지 못했습니다.");
+        }
+        advanceTurnOrder(player);
+    }
+
+    private void advanceTurnOrder(Player player) {
+        if (turnOrder == null) {
+            return;
+        }
+        turnOrder.advance(player);
+        ui.message("[다리] " + player.getName() + "의 턴 순서 토큰이 앞으로 이동했습니다.");
     }
 
     private void takeTileFromBoardAction(Player player,

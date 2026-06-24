@@ -8,6 +8,7 @@ import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.BaseTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
+import castlesofburgundy.view.ConsoleUi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ class TurnManagerTest {
     @DisplayName("시장에 타일이 있고 저장소가 비어 있으면 '타일 가져오기' 옵션이 생긴다")
     void buildOptions_marketAndEmptyStorage() {
         GameContext ctx = simpleContext();
-        TurnManager tm = new TurnManager(ctx, new Scanner(System.in));
+        TurnManager tm = new TurnManager(ctx, new ConsoleUi(new Scanner(System.in)));
         Player p = newPlayer();
 
         int die = 1; // 섹션 1
@@ -61,7 +62,7 @@ class TurnManagerTest {
     @DisplayName("저장소가 가득 차면 '타일 가져오기' 옵션은 생기지 않는다")
     void buildOptions_storageFull_noMarketTake() {
         GameContext ctx = simpleContext();
-        TurnManager tm = new TurnManager(ctx, new Scanner(System.in));
+        TurnManager tm = new TurnManager(ctx, new ConsoleUi(new Scanner(System.in)));
         Player p = newPlayer();
 
         // 저장소 가득 채우기
@@ -79,7 +80,7 @@ class TurnManagerTest {
     @DisplayName("저장소에 있는 타일을 현재 주사위 눈으로 둘 수 있으면 '배치' 옵션이 생긴다")
     void buildOptions_placeFromStorage() {
         GameContext ctx = simpleContext();
-        TurnManager tm = new TurnManager(ctx, new Scanner(System.in));
+        TurnManager tm = new TurnManager(ctx, new ConsoleUi(new Scanner(System.in)));
         Player p = newPlayer();
 
         // 플레이어 보드에서, 예를 들어 13번 칸은 KNOWLEDGE / die=1 (지금 레이아웃에 맞게 수정)
@@ -98,7 +99,7 @@ class TurnManagerTest {
     @DisplayName("일꾼이 있다면, 그에 해당하는 일꾼을 소모하여 액션을 할 수 있다.")
     void actionConsumesWorkers() {
         GameContext ctx = simpleContext();
-        TurnManager tm = new TurnManager(ctx, new Scanner(System.in));
+        TurnManager tm = new TurnManager(ctx, new ConsoleUi(new Scanner(System.in)));
         Player p = newPlayer(); // 기본 일꾼 2개
 
         int die = 1;

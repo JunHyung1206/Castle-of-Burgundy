@@ -2,54 +2,54 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.player.Player;
-import castlesofburgundy.view.GameBoardConsoleView;
-import castlesofburgundy.view.PlayerConsoleView;
 
 public class PhaseRunner {
 
     private final GameContext ctx;
     private final RoundManager roundManager;
     private final TurnManager turnManager;
+    private final GameUi ui;
 
-    public PhaseRunner(GameContext ctx, RoundManager roundManager, TurnManager turnManager) {
+    public PhaseRunner(GameContext ctx, RoundManager roundManager, TurnManager turnManager, GameUi ui) {
         this.ctx = ctx;
         this.roundManager = roundManager;
         this.turnManager = turnManager;
+        this.ui = ui;
     }
 
     public void runAllPhases(Player[] players) {
         for (Phase phase : Phase.values()) {
             runPhase(phase, players);
         }
-        System.out.println("\n=== 모든 페이즈 종료 ===");
+        ui.message("\n=== 모든 페이즈 종료 ===");
     }
 
     public void runPhase(Phase phase, Player[] players) {
 
         startNewPhase();
-        System.out.println("\n================================");
-        System.out.println("=== Phase " + phase + " 시작 ===");
-        System.out.println("================================");
+        ui.message("\n================================");
+        ui.message("=== Phase " + phase + " 시작 ===");
+        ui.message("================================");
 
         BoardState boardState = ctx.boardState();
 
         while (roundManager.hasMoreRounds()) {
             int round = roundManager.nextRound();
-            System.out.println("\n--- Phase " + phase + " / Round " + round + " ---");
+            ui.message("\n--- Phase " + phase + " / Round " + round + " ---");
 
             // 라운드 시작 시 시장 상태 출력
-            System.out.println(GameBoardConsoleView.render(ctx.layout(), boardState));
+            ui.showGameBoard(ctx.layout(), boardState);
 
             // 각 플레이어 차례대로
             for (Player player : players) {
-                System.out.println("\n현재 보드 상태 (" + player.getName() + ")");
-                System.out.println(PlayerConsoleView.render(player));
+                ui.message("\n현재 보드 상태 (" + player.getName() + ")");
+                ui.showPlayer(player);
 
                 turnManager.playerTurn(player, phase);
             }
         }
 
-        System.out.println("\n=== Phase " + phase + " 종료 ===");
+        ui.message("\n=== Phase " + phase + " 종료 ===");
     }
 
     /**

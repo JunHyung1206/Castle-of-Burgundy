@@ -7,24 +7,23 @@ import castlesofburgundy.tile.Tile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.function.BooleanSupplier;
 
 public final class TurnManager {
     private final GameContext ctx;
-    private final Scanner in;
+    private final GameUi ui;
 
-    public TurnManager(GameContext ctx, Scanner in) {
+    public TurnManager(GameContext ctx, GameUi ui) {
         this.ctx = ctx;
-        this.in = in;
+        this.ui = ui;
     }
 
     public void playerTurn(Player player, Phase phase) {
-        System.out.println("\n===" + player.getName() + "의 턴 ===");
+        ui.message("\n===" + player.getName() + "의 턴 ===");
         int d1 = ctx.dice().roll();
         int d2 = ctx.dice().roll();
 
-        System.out.println("굴린 주사위: " + d1 + ", " + d2);
+        ui.message("굴린 주사위: " + d1 + ", " + d2);
 
         handleDie(player, d1, 1, phase);
         handleDie(player, d2, 2, phase);
@@ -33,20 +32,20 @@ public final class TurnManager {
     /**
      * 하나의 선택 가능한 액션.
      * apply 실행 결과 boolean = 성 효과처럼 '추가 행동'을 부여하면 true.
-     * apply 안에서는 상태만 바꾸고, 메뉴 출력·입력·추가 행동 진행은 호출부(TurnManager)가 담당한다.
+     * apply 안에서는 상태만 바꾸고 결과를 서술(ui.message)할 뿐, 메뉴 출력·입력·추가 행동 진행은 호출부가 담당한다.
      */
     public record Action(String description, BooleanSupplier apply) {
     }
 
     private void handleDie(Player player, int die, int dieIndex, Phase phase) {
-        System.out.println("\n[" + dieIndex + "번째 주사위: " + die + "]");
-        System.out.println("현재 일꾼 수 : " + player.getWorkers());
+        ui.message("\n[" + dieIndex + "번째 주사위: " + die + "]");
+        ui.message("현재 일꾼 수 : " + player.getWorkers());
 
         List<Action> actions = buildOptionsForDie(player, die, phase);
 
         Action selected = chooseAction(actions);
         boolean grantsExtraAction = selected.apply().getAsBoolean();
-        System.out.println("=> 실행: " + selected.description());
+        ui.message("=> 실행: " + selected.description());
 
         if (grantsExtraAction) {
             runCastleExtraAction(player, phase);
@@ -109,7 +108,13 @@ public final class TurnManager {
 
                 actions.add(new Action(desc, () -> {
                     player.spendWorkers(usedWorkers);
-                    return PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+                    PlacementOutcome outcome = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+                    if (outcome.completedRegionSize() > 0) {
+                        ui.message("[구역 완성] " + player.getName()
+                                + "이(가) 크기 " + outcome.completedRegionSize()
+                                + " 구역을 완성했습니다! (+" + outcome.regionScore() + "점, 페이즈 " + phase + ")");
+                    }
+                    return outcome.grantsExtraAction();
                 }));
             }
         }
@@ -160,14 +165,14 @@ public final class TurnManager {
         }
 
         if (extraActions.isEmpty()) {
-            System.out.println("\n[성 효과] 추가 행동이 가능하지만 현재 가능한 선택지가 없습니다.");
+            ui.message("\n[성 효과] 추가 행동이 가능하지만 현재 가능한 선택지가 없습니다.");
             return;
         }
 
-        System.out.println("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
+        ui.message("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
         Action selected = chooseAction(extraActions);
         boolean grantsExtraAction = selected.apply().getAsBoolean();
-        System.out.println("=> [성 추가 행동] 실행: " + selected.description());
+        ui.message("=> [성 추가 행동] 실행: " + selected.description());
 
         if (grantsExtraAction) {
             runCastleExtraAction(player, phase);  // 성으로 또 성을 놓으면 연쇄
@@ -180,25 +185,13 @@ public final class TurnManager {
         return actions;
     }
 
-    /** 메뉴를 출력하고 사용자의 선택을 받아 해당 Action을 반환한다. (콘솔 I/O는 이 안에 모은다) */
+    /** 메뉴를 보여주고 선택을 받아 해당 Action을 반환한다. (실제 출력/입력은 GameUi가 담당) */
     private Action chooseAction(List<Action> actions) {
-        for (int i = 0; i < actions.size(); i++) {
-            System.out.println(i + ") " + actions.get(i).description());
+        List<String> descriptions = new ArrayList<>(actions.size());
+        for (Action a : actions) {
+            descriptions.add(a.description());
         }
-        int choice = readChoice(actions.size());
+        int choice = ui.chooseIndex(descriptions);
         return actions.get(choice);
-    }
-
-    private int readChoice(int size) {
-        while (true) {
-            System.out.print("번호 선택(0~" + (size - 1) + "): ");
-            String line = in.nextLine();
-            try {
-                int v = Integer.parseInt(line);
-                if (v >= 0 && v < size) return v;
-            } catch (NumberFormatException ignored) {
-            }
-            System.out.println("잘못된 입력입니다.");
-        }
     }
 }

@@ -28,9 +28,9 @@ public final class PlayerActions {
      * 저장소의 타일을 영지에 배치하고, 그에 따른 즉시 효과(구역 완성 점수 + 타일 고유 보너스)를
      * 모두 player에 적용한다.
      *
-     * @return 성 효과처럼 "추가 행동"을 줘야 하면 true. (그 외 점수/자원은 이미 적용됨)
+     * @return 일어난 일(추가 행동 여부, 완성된 구역 크기/점수)을 담은 결과. 화면 서술은 호출부가 한다.
      */
-    public static boolean placeTileFromStorage(
+    public static PlacementOutcome placeTileFromStorage(
             Player player,
             int storageId,
             int cellId,
@@ -42,14 +42,10 @@ public final class PlayerActions {
 
         // 1) 구역 완성 점수
         int regionSize = player.completedRegionSizeIfAny(cellId);
+        int regionScore = 0;
         if (regionSize > 0) {
-            int regionScore = phaseBonus(phase) + regionSizeBonus(regionSize);
+            regionScore = phaseBonus(phase) + regionSizeBonus(regionSize);
             player.addScore(regionScore);
-
-            System.out.println(
-                    "[구역 완성] " + player.getName() +
-                            "이(가) 크기 " + regionSize + " 구역을 완성했습니다! (+" + regionScore + "점, 페이즈 " + phase + ")"
-            );
         }
 
         // 2) 타일 고유 효과
@@ -67,8 +63,7 @@ public final class PlayerActions {
             player.addSilver(tileResult.bonusSilver());
         }
 
-        // 4) 호출부 제어 흐름에 필요한 것만 반환 (점수/자원은 위에서 이미 적용)
-        return tileResult.grantExtraAction();
+        return new PlacementOutcome(tileResult.grantExtraAction(), regionSize, regionScore);
     }
 
 

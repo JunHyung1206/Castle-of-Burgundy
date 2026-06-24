@@ -51,7 +51,25 @@ public final class PersonalBoard {
         }
         // 인접성: 이미 놓인 칸과 인접해야 함(시작 성 제외)
         List<Integer> neighbors = layout.getNeighbors(cellId);
-        return neighbors.stream().anyMatch(placed::containsKey);
+        if (neighbors.stream().noneMatch(placed::containsKey)) {
+            return false;
+        }
+
+        // 건물: 한 도시(연결된 베이지 영역)에 같은 종류는 하나만
+        if (tile instanceof BuildingTile building && cityHasBuilding(cellId, building.kind())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean cityHasBuilding(int cellId, BuildingKind kind) {
+        for (Tile t : placedTilesInRegion(cellId)) {
+            if (t instanceof BuildingTile b && b.kind() == kind) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void place(int cellId, Tile tile, int dieUsed) {

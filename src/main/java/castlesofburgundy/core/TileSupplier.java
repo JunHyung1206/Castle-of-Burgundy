@@ -3,6 +3,8 @@ package castlesofburgundy.core;
 import castlesofburgundy.tile.AnimalSpecies;
 import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BaseTile;
+import castlesofburgundy.tile.BuildingKind;
+import castlesofburgundy.tile.BuildingTile;
 import castlesofburgundy.tile.CastleTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
@@ -25,6 +27,9 @@ public class TileSupplier {
                 } else if (t == TileType.ANIMAL) {
                     // TODO: 실제 가축 구성으로 교체. 지금은 4종 순환 + 수 2~4 순환의 임시 구성.
                     tile = new AnimalTile(i, AnimalSpecies.values()[i % 4], 2 + (i % 3));
+                } else if (t == TileType.BUILDING) {
+                    // 8종 순환 (40장 → 종류별 5장)
+                    tile = new BuildingTile(i, BuildingKind.values()[i % 8]);
                 } else {
                     tile = BaseTile.of(t, i);
                 }

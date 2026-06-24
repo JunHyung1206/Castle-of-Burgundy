@@ -11,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PhaseEndTest {
@@ -24,7 +22,7 @@ class PhaseEndTest {
     void setUp() {
         GameBoardLayout layout = new GameBoardLayout();
         BoardState boardState = new BoardState(layout);
-        TileSupplier supplier = new TileSupplier(Map.of(), 1L);
+        TileSupplier supplier = new TileSupplier(1L);
         GameContext ctx = new GameContext(1L, layout, boardState, supplier, new Dice(1L));
 
         ui = new RecordingGameUi();

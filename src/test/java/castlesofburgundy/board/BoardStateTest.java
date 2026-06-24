@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,15 +19,7 @@ class BoardStateTest {
 
     @BeforeEach
     void setUp() {
-        Map<TileType, Integer> counts = Map.of(
-                TileType.CASTLE, 8,
-                TileType.SHIP, 100,
-                TileType.MINE, 100,
-                TileType.ANIMAL, 200,
-                TileType.BUILDING, 280,
-                TileType.KNOWLEDGE, 180
-        );
-        supplier = new TileSupplier(counts, 42);
+        supplier = new TileSupplier(42);
     }
 
     @Test

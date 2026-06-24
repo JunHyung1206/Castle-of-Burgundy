@@ -11,8 +11,6 @@ import castlesofburgundy.tile.TileType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -20,15 +18,7 @@ class PlayerActionsTest {
 
     private GameContext simpleContext() {
         GameBoardLayout layout = new GameBoardLayout();
-        Map<TileType, Integer> counts = Map.of(
-                TileType.CASTLE, 10,
-                TileType.SHIP, 10,
-                TileType.MINE, 10,
-                TileType.ANIMAL, 10,
-                TileType.BUILDING, 10,
-                TileType.KNOWLEDGE, 10
-        );
-        TileSupplier supplier = new TileSupplier(counts, 42L);
+        TileSupplier supplier = new TileSupplier(42L);
         BoardState boardState = new BoardState(layout);
         boardState.fillAllFromSupply(supplier);
         return new GameContext(1L, layout, boardState, supplier, new Dice(1L));

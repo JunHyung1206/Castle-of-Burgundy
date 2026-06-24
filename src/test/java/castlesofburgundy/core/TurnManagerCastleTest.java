@@ -11,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -29,7 +27,7 @@ class TurnManagerCastleTest {
     void setUp() {
         GameBoardLayout layout = new GameBoardLayout();
         BoardState emptyBoard = new BoardState(layout); // 일부러 채우지 않음 → 보드에서 가져오기 옵션 배제
-        TileSupplier supplier = new TileSupplier(Map.of(), 1L);
+        TileSupplier supplier = new TileSupplier(1L);
         ctx = new GameContext(1L, layout, emptyBoard, supplier, new Dice(1L));
 
         ui = new RecordingGameUi();

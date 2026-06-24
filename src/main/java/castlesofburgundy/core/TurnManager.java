@@ -4,11 +4,15 @@ import castlesofburgundy.board.BoardSlot;
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
+import castlesofburgundy.tile.BuildingKind;
+import castlesofburgundy.tile.BuildingTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 public final class TurnManager {
@@ -132,6 +136,9 @@ public final class TurnManager {
                     if (t.type() == TileType.SHIP) {
                         handleShipPlacement(player);
                     }
+                    if (t instanceof BuildingTile building) {
+                        handleBuildingPlacement(player, building.kind());
+                    }
                     if (outcome.completedRegionSize() > 0) {
                         ui.message("[구역 완성] " + player.getName()
                                 + "이(가) 크기 " + outcome.completedRegionSize()
@@ -179,6 +186,97 @@ public final class TurnManager {
                 }));
             }
         }
+    }
+
+    private void handleBuildingPlacement(Player player, BuildingKind kind) {
+        switch (kind) {
+            case MARKET -> takeBoardTileByBuildingEffect(
+                    player,
+                    EnumSet.of(TileType.SHIP, TileType.ANIMAL),
+                    "[시장]"
+            );
+            case CARPENTER -> takeBoardTileByBuildingEffect(
+                    player,
+                    EnumSet.of(TileType.BUILDING),
+                    "[목수]"
+            );
+            case CHURCH -> takeBoardTileByBuildingEffect(
+                    player,
+                    EnumSet.of(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE),
+                    "[교회]"
+            );
+            case WAREHOUSE -> sellGoodsByWarehouse(player);
+            default -> {
+            }
+        }
+    }
+
+    private void takeBoardTileByBuildingEffect(Player player, Set<TileType> allowedTypes, String label) {
+        List<String> options = new ArrayList<>();
+        List<Runnable> effects = new ArrayList<>();
+
+        for (BoardSlot slot : ctx.layout().asSlots()) {
+            Tile tile = ctx.boardState().get(slot).orElse(null);
+            if (tile == null || !allowedTypes.contains(tile.type())) {
+                continue;
+            }
+
+            if (!player.isStorageFull()) {
+                options.add(label + " 섹션 " + slot.sectionId() + " 슬롯 " + slot.index()
+                        + "에서 타일 " + tile.type() + " 가져오기");
+                effects.add(() -> PlayerActions.takeTileFromBoard(ctx, player, slot.sectionId(), slot.index()));
+                continue;
+            }
+
+            List<Tile> stored = player.storedTiles();
+            for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
+                int discardIndex = storageIndex;
+                Tile discarded = stored.get(storageIndex);
+                options.add(label + " 저장소[" + discardIndex + "] 버리고 섹션 "
+                        + slot.sectionId() + " 슬롯 " + slot.index()
+                        + "에서 타일 " + tile.type() + " 가져오기"
+                        + " (버림: " + discarded.type() + ")");
+                effects.add(() -> PlayerActions.replaceTileFromBoard(
+                        ctx,
+                        player,
+                        slot.sectionId(),
+                        slot.index(),
+                        discardIndex
+                ));
+            }
+        }
+
+        if (options.isEmpty()) {
+            ui.message(label + " 가져올 수 있는 타일이 없습니다.");
+            return;
+        }
+
+        int choice = ui.chooseIndex(options);
+        effects.get(choice).run();
+        ui.message(label + " 효과를 실행했습니다.");
+    }
+
+    private void sellGoodsByWarehouse(Player player) {
+        List<String> options = new ArrayList<>();
+        List<GoodsColor> colors = new ArrayList<>();
+
+        for (GoodsColor color : GoodsColor.values()) {
+            int count = player.goods().count(color);
+            if (count > 0) {
+                colors.add(color);
+                options.add(color + " 상품 판매 (" + count + "개)");
+            }
+        }
+
+        if (options.isEmpty()) {
+            ui.message("[창고] 판매할 상품이 없습니다.");
+            return;
+        }
+
+        int choice = ui.chooseIndex(options);
+        GoodsColor color = colors.get(choice);
+        int sold = PlayerActions.sellGoods(player, color, playerCount);
+        ui.message("[창고] " + color + " " + sold + "개 → 은화 +1, 점수 +" + (sold * playerCount));
     }
 
     private void sellGoodsAction(Player player,

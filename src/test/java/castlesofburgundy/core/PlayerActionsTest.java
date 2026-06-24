@@ -51,19 +51,28 @@ class PlayerActionsTest {
     }
 
     @Test
-    @DisplayName("저장소가 가득 차 있으면 시장에서 더 가져올 수 없다 (예외)")
-    void takeTileFromMarketWhenStorageFull() {
+    @DisplayName("저장소가 가득 차 있으면 명시적으로 하나 버리고 시장 타일을 가져온다")
+    void replaceTileFromMarketWhenStorageFull() {
         GameContext ctx = simpleContext();
         Player p = newPlayer();
 
         // 저장소를 가득 채우기
-        p.addToStorage(BaseTile.of(TileType.ANIMAL, 1));
-        p.addToStorage(BaseTile.of(TileType.ANIMAL, 2));
-        p.addToStorage(BaseTile.of(TileType.ANIMAL, 3));
+        Tile keep1 = BaseTile.of(TileType.ANIMAL, 1);
+        Tile discarded = BaseTile.of(TileType.ANIMAL, 2);
+        Tile keep2 = BaseTile.of(TileType.ANIMAL, 3);
+        p.addToStorage(keep1);
+        p.addToStorage(discarded);
+        p.addToStorage(keep2);
         assertThat(p.getStorage().isFull()).isTrue();
 
-        assertThrows(IllegalStateException.class,
-                () -> PlayerActions.takeTileFromBoard(ctx, p, 1, 0));
+        BoardSlot slot = new BoardSlot(1, 0);
+        Tile expectedTile = ctx.boardState().get(slot).get();
+
+        Tile actualDiscarded = PlayerActions.replaceTileFromBoard(ctx, p, 1, 0, 1);
+
+        assertThat(actualDiscarded).isEqualTo(discarded);
+        assertThat(ctx.boardState().hasTile(slot)).isFalse();
+        assertThat(p.getStorage().view()).containsExactly(keep1, keep2, expectedTile);
     }
 
     @Test

@@ -25,6 +25,31 @@ public final class PlayerActions {
         player.addToStorage(tile);
     }
 
+    public static Tile replaceTileFromBoard(GameContext ctx, Player player, int dieValue, int slotIndex, int storageIndexToDiscard) {
+        if (dieValue < 1 || dieValue > 6) {
+            throw new IllegalArgumentException("주사위 눈은 1~6");
+        }
+        if (slotIndex < 0 || slotIndex >= 4) {
+            throw new IllegalArgumentException("slotIndex 0~3");
+        }
+        requireStorageIndex(player, storageIndexToDiscard);
+
+        BoardSlot slot = new BoardSlot(dieValue, slotIndex);
+        Tile tile = ctx.boardState().removeAt(slot)
+                .orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot));
+
+        Tile discarded = player.getStorage().removeAt(storageIndexToDiscard);
+        player.addToStorage(tile);
+        return discarded;
+    }
+
+    private static void requireStorageIndex(Player player, int storageIndex) {
+        int storageSize = player.storedTiles().size();
+        if (storageIndex < 0 || storageIndex >= storageSize) {
+            throw new IndexOutOfBoundsException("index=" + storageIndex);
+        }
+    }
+
     /**
      * 저장소의 타일을 영지에 배치하고, 그에 따른 즉시 효과(구역 완성 점수 + 타일 고유 보너스)를
      * 모두 player에 적용한다.

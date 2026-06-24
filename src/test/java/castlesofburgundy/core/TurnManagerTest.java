@@ -51,8 +51,8 @@ class TurnManagerTest {
     }
 
     @Test
-    @DisplayName("저장소가 가득 차면 '타일 가져오기' 옵션은 생기지 않는다")
-    void buildOptions_storageFull_noMarketTake() {
+    @DisplayName("저장소가 가득 차면 '버리고 타일 가져오기' 옵션이 생긴다")
+    void buildOptions_storageFull_replacesStoredTile() {
         GameContext ctx = simpleContext();
         TurnManager tm = new TurnManager(ctx, new ConsoleUi(new Scanner(System.in)));
         Player p = newPlayer();
@@ -65,7 +65,19 @@ class TurnManagerTest {
 
         List<TurnManager.Action> options = tm.buildOptionsForDie(p, 1, Phase.A);
 
-        assertThat(options).noneMatch(opt -> opt.description().contains("섹션 1"));
+        assertThat(options).anyMatch(opt -> opt.description().contains("저장소[0] 버리고")
+                && opt.description().contains("섹션 1 슬롯 0"));
+
+        TurnManager.Action replaceAction = options.stream()
+                .filter(opt -> opt.description().contains("저장소[1] 버리고")
+                        && opt.description().contains("섹션 1 슬롯 0"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("저장소[1]을 버리고 섹션 1 슬롯 0 타일을 가져오는 옵션이 있어야 한다"));
+
+        replaceAction.apply().getAsBoolean();
+
+        assertThat(p.getStorage().size()).isEqualTo(3);
+        assertThat(ctx.boardState().hasTile(new castlesofburgundy.board.BoardSlot(1, 0))).isFalse();
     }
 
     @Test

@@ -213,21 +213,37 @@ public final class TurnManager {
                                          int adjustedDie,
                                          String prefix,
                                          List<Action> actions) {
-        if (player.isStorageFull()) {
-            return;
-        }
-
         for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
             BoardSlot slot = new BoardSlot(adjustedDie, slotIndex);
 
             Tile tile = boardState.get(slot).orElse(null);
-            if (tile != null) {
-                int sIdx = slotIndex;
+            if (tile == null) {
+                continue;
+            }
+
+            int sIdx = slotIndex;
+            if (!player.isStorageFull()) {
                 String desc = prefix + "섹션 " + adjustedDie + " 슬롯 " + slotIndex
                         + "에서 타일 " + tile.type() + " 가져오기";
                 actions.add(new Action(desc, () -> {
                     player.spendWorkers(usedWorkers);
                     PlayerActions.takeTileFromBoard(ctx, player, adjustedDie, sIdx);
+                    return false;
+                }));
+                continue;
+            }
+
+            List<Tile> stored = player.storedTiles();
+            for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
+                int discardIndex = storageIndex;
+                Tile discarded = stored.get(storageIndex);
+                String desc = prefix + "저장소[" + discardIndex + "] 버리고 섹션 "
+                        + adjustedDie + " 슬롯 " + slotIndex
+                        + "에서 타일 " + tile.type() + " 가져오기"
+                        + " (버림: " + discarded.type() + ")";
+                actions.add(new Action(desc, () -> {
+                    player.spendWorkers(usedWorkers);
+                    PlayerActions.replaceTileFromBoard(ctx, player, adjustedDie, sIdx, discardIndex);
                     return false;
                 }));
             }

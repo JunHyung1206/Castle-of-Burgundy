@@ -1,5 +1,7 @@
 package castlesofburgundy.player;
 
+import castlesofburgundy.goods.GoodsColor;
+import castlesofburgundy.goods.GoodsStorage;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 
@@ -9,6 +11,7 @@ import java.util.Set;
 public final class Player {
     private final PersonalBoard board;
     private final Storage storage;
+    private final GoodsStorage goods = new GoodsStorage();
     private final String name;
 
     private int workers;
@@ -81,6 +84,15 @@ public final class Player {
 
     public void gainWorkers(int value) {
         workers += value;
+    }
+
+    /** 상품 한 개 저장 시도. 3색 제한으로 둘 수 없으면 false. */
+    public boolean addGoods(GoodsColor color) {
+        return goods.add(color);
+    }
+
+    public GoodsStorage goods() {
+        return goods;
     }
 
     public Storage getStorage() {

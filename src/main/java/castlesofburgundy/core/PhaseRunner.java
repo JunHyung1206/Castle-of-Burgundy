@@ -99,6 +99,7 @@ public class PhaseRunner {
      */
     private void startNewPhase() {
         ctx.boardState().fillAllFromSupply(ctx.tileSupplier());
+        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
         roundManager.resetForNewPhase();
     }
 

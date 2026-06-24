@@ -31,6 +31,11 @@ public class TileSupplier {
         return Optional.of(create(type));
     }
 
+    public Optional<Tile> drawAny() {
+        TileType[] types = TileType.values();
+        return draw(types[random.nextInt(types.length)]);
+    }
+
     private Tile create(TileType type) {
         int id = nextId++;
         return switch (type) {

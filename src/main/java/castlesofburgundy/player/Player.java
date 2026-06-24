@@ -82,6 +82,17 @@ public final class Player {
         silver += value;
     }
 
+    public int spendSilver(int value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("silverToSpend >= 0");
+        }
+        if (silver < value) {
+            throw new IllegalStateException("은화 부족");
+        }
+        silver -= value;
+        return silver;
+    }
+
     public void gainWorkers(int value) {
         workers += value;
     }

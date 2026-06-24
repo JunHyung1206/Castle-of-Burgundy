@@ -57,6 +57,69 @@ class TurnManagerGoodsTest {
     }
 
     @Test
+    @DisplayName("은화 2개와 중앙 시장 타일이 있으면 구매 액션이 생긴다")
+    void buildOptionsIncludesCentralMarketPurchase() {
+        GameContext ctx = emptyContext();
+        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        RecordingGameUi ui = new RecordingGameUi();
+        TurnManager tm = new TurnManager(ctx, ui, 2);
+        Player player = newPlayer("P1");
+        player.addSilver(2);
+
+        TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A).stream()
+                .filter(action -> action.description().contains("중앙 시장[0]")
+                        && action.description().contains("은화 2개"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("중앙 시장 구매 액션이 있어야 한다"));
+
+        boolean extraAction = purchase.apply().getAsBoolean();
+
+        assertThat(extraAction).isFalse();
+        assertThat(player.getSilver()).isZero();
+        assertThat(player.getStorage().size()).isEqualTo(1);
+        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+    }
+
+    @Test
+    @DisplayName("은화가 2개 미만이면 중앙 시장 구매 액션은 생기지 않는다")
+    void buildOptionsExcludesCentralMarketPurchaseWithoutSilver() {
+        GameContext ctx = emptyContext();
+        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        TurnManager tm = new TurnManager(ctx, new RecordingGameUi(), 2);
+        Player player = newPlayer("P1");
+        player.addSilver(1);
+
+        List<TurnManager.Action> options = tm.buildOptionsForDie(player, 1, Phase.A);
+
+        assertThat(options).noneMatch(action -> action.description().contains("중앙 시장"));
+    }
+
+    @Test
+    @DisplayName("저장소가 가득 차 있어도 버릴 타일을 고르면 중앙 시장 타일을 구매할 수 있다")
+    void buildOptionsCentralMarketPurchaseReplacesStoredTile() {
+        GameContext ctx = emptyContext();
+        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        TurnManager tm = new TurnManager(ctx, new RecordingGameUi(), 2);
+        Player player = newPlayer("P1");
+        player.addSilver(2);
+        player.addToStorage(BaseTile.of(TileType.ANIMAL, 1));
+        player.addToStorage(BaseTile.of(TileType.ANIMAL, 2));
+        player.addToStorage(BaseTile.of(TileType.ANIMAL, 3));
+
+        TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A).stream()
+                .filter(action -> action.description().contains("저장소[1] 버리고")
+                        && action.description().contains("중앙 시장[0]"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("저장소를 비우고 중앙 시장 타일을 구매하는 액션이 있어야 한다"));
+
+        purchase.apply().getAsBoolean();
+
+        assertThat(player.getSilver()).isZero();
+        assertThat(player.getStorage().size()).isEqualTo(3);
+        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+    }
+
+    @Test
     @DisplayName("배를 놓으면 선택한 창고의 상품을 모두 가져오고 턴 순서가 한 칸 앞으로 간다")
     void shipPlacementTakesGoodsAndAdvancesTurnOrder() {
         GameContext ctx = emptyContext();

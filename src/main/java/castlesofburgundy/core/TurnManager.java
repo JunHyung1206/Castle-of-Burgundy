@@ -96,6 +96,7 @@ public final class TurnManager {
             addActionsForSetting(player, boardState, used, plusDie, "[일꾼 " + used + "개 소모] ", phase, actions);
         }
 
+        buyTileFromCentralMarketAction(player, actions);
         takeWorkersAction(player, actions);
         return actions;
     }
@@ -137,6 +138,44 @@ public final class TurnManager {
                                 + " 구역을 완성했습니다! (+" + outcome.regionScore() + "점, 페이즈 " + phase + ")");
                     }
                     return outcome.grantsExtraAction();
+                }));
+            }
+        }
+    }
+
+    private void buyTileFromCentralMarketAction(Player player, List<Action> actions) {
+        if (player.getSilver() < 2) {
+            return;
+        }
+
+        List<Tile> centralMarket = ctx.boardState().centralMarket();
+        if (centralMarket.isEmpty()) {
+            return;
+        }
+
+        for (int marketIndex = 0; marketIndex < centralMarket.size(); marketIndex++) {
+            int mIdx = marketIndex;
+            Tile tile = centralMarket.get(marketIndex);
+            if (!player.isStorageFull()) {
+                String desc = "은화 2개로 중앙 시장[" + marketIndex + "]의 "
+                        + tile.type() + " 구매";
+                actions.add(new Action(desc, () -> {
+                    PlayerActions.buyTileFromCentralMarket(ctx, player, mIdx);
+                    return false;
+                }));
+                continue;
+            }
+
+            List<Tile> stored = player.storedTiles();
+            for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
+                int discardIndex = storageIndex;
+                Tile discarded = stored.get(storageIndex);
+                String desc = "저장소[" + discardIndex + "] 버리고 은화 2개로 중앙 시장["
+                        + marketIndex + "]의 " + tile.type() + " 구매"
+                        + " (버림: " + discarded.type() + ")";
+                actions.add(new Action(desc, () -> {
+                    PlayerActions.replaceTileFromCentralMarket(ctx, player, mIdx, discardIndex);
+                    return false;
                 }));
             }
         }

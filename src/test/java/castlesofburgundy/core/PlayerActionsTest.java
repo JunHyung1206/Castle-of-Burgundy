@@ -76,6 +76,49 @@ class PlayerActionsTest {
     }
 
     @Test
+    @DisplayName("은화 2개를 내고 중앙 시장 타일을 구매한다")
+    void buyTileFromCentralMarket() {
+        GameContext ctx = simpleContext();
+        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        Player p = newPlayer();
+        p.addSilver(2);
+
+        Tile expectedTile = ctx.boardState().centralMarket().get(0);
+
+        PlayerActions.buyTileFromCentralMarket(ctx, p, 0);
+
+        assertThat(p.getSilver()).isZero();
+        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+        assertThat(ctx.boardState().centralMarket()).doesNotContain(expectedTile);
+        assertThat(p.getStorage().view()).containsExactly(expectedTile);
+    }
+
+    @Test
+    @DisplayName("저장소가 가득 차 있으면 하나 버리고 중앙 시장 타일을 구매한다")
+    void replaceTileFromCentralMarketWhenStorageFull() {
+        GameContext ctx = simpleContext();
+        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        Player p = newPlayer();
+        p.addSilver(2);
+
+        Tile keep1 = BaseTile.of(TileType.ANIMAL, 1);
+        Tile discarded = BaseTile.of(TileType.ANIMAL, 2);
+        Tile keep2 = BaseTile.of(TileType.ANIMAL, 3);
+        p.addToStorage(keep1);
+        p.addToStorage(discarded);
+        p.addToStorage(keep2);
+
+        Tile expectedTile = ctx.boardState().centralMarket().get(0);
+
+        Tile actualDiscarded = PlayerActions.replaceTileFromCentralMarket(ctx, p, 0, 1);
+
+        assertThat(actualDiscarded).isEqualTo(discarded);
+        assertThat(p.getSilver()).isZero();
+        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+        assertThat(p.getStorage().view()).containsExactly(keep1, keep2, expectedTile);
+    }
+
+    @Test
     @DisplayName("성 타일을 배치하면 추가 행동(grantsExtraAction)이 부여된다")
     void placeCastleGrantsExtraAction() {
         PersonalBoard pb = new PersonalBoard(new PersonalLayout());

@@ -6,6 +6,8 @@ import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
 
 public final class PlayerActions {
+    private static final int CENTRAL_MARKET_COST = 2;
+
     private PlayerActions() {
     }
 
@@ -41,6 +43,35 @@ public final class PlayerActions {
         Tile discarded = player.getStorage().removeAt(storageIndexToDiscard);
         player.addToStorage(tile);
         return discarded;
+    }
+
+    public static void buyTileFromCentralMarket(GameContext ctx, Player player, int marketIndex) {
+        if (player.isStorageFull()) {
+            throw new IllegalStateException("저장소 가득참: 먼저 버려야 함");
+        }
+
+        requireCentralMarketTile(ctx, marketIndex);
+        player.spendSilver(CENTRAL_MARKET_COST);
+        Tile tile = ctx.boardState().removeCentralMarketAt(marketIndex)
+                .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
+        player.addToStorage(tile);
+    }
+
+    public static Tile replaceTileFromCentralMarket(GameContext ctx, Player player, int marketIndex, int storageIndexToDiscard) {
+        requireStorageIndex(player, storageIndexToDiscard);
+        requireCentralMarketTile(ctx, marketIndex);
+
+        player.spendSilver(CENTRAL_MARKET_COST);
+        Tile tile = ctx.boardState().removeCentralMarketAt(marketIndex)
+                .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
+        Tile discarded = player.getStorage().removeAt(storageIndexToDiscard);
+        player.addToStorage(tile);
+        return discarded;
+    }
+
+    private static Tile requireCentralMarketTile(GameContext ctx, int marketIndex) {
+        return ctx.boardState().getCentralMarket(marketIndex)
+                .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
     }
 
     private static void requireStorageIndex(Player player, int storageIndex) {

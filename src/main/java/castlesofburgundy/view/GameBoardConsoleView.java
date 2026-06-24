@@ -77,6 +77,7 @@ public final class GameBoardConsoleView {
             }
             sb.append("\n");
         }
+        sb.append(renderCentralMarket(boardState.centralMarket()));
         return sb.toString();
     }
 
@@ -107,6 +108,29 @@ public final class GameBoardConsoleView {
         }
         out.add(padRight(border, BOX_W));
         return out;
+    }
+
+    private static String renderCentralMarket(List<Tile> tiles) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n=== Central Market ===\n");
+        if (tiles.isEmpty()) {
+            sb.append("(empty)\n");
+            return sb.toString();
+        }
+
+        for (int i = 0; i < tiles.size(); i++) {
+            Tile tile = tiles.get(i);
+            String inner = AsciiUtils.shortType(tile.type());
+            String colored = COLORIZE ? AsciiUtils.colorizeInner(inner, tile.type(), true) : inner;
+            sb.append("[")
+                    .append(i)
+                    .append(":")
+                    .append(colored)
+                    .append(tile.id())
+                    .append("] ");
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 
     private static String padRight(String s, int width) {

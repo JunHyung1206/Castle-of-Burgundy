@@ -12,9 +12,12 @@ import java.util.*;
  * 추가로 각 창고(1~6)에 쌓인 상품 타일을 보관한다(육각 타일과 달리 페이즈가 바뀌어도 유지).
  **/
 public class BoardState {
+    private static final int CENTRAL_MARKET_SIZE = 8;
+
     private final GameBoardLayout layout;
     private final Map<BoardSlot, Tile> placed = new HashMap<>();
     private final Map<Integer, List<GoodsColor>> warehouseGoods = new HashMap<>();
+    private final List<Tile> centralMarket = new ArrayList<>();
 
     public BoardState(GameBoardLayout layout) {
         this.layout = Objects.requireNonNull(layout);
@@ -57,6 +60,32 @@ public class BoardState {
             Optional<Tile> drawn = supply.draw(type);
             drawn.ifPresent(tile -> placed.put(slot, tile));
         }
+    }
+
+    public void fillCentralMarketFromSupply(TileSupplier supply) {
+        Objects.requireNonNull(supply, "supply");
+        centralMarket.clear();
+        for (int i = 0; i < CENTRAL_MARKET_SIZE; i++) {
+            supply.drawAny().ifPresent(centralMarket::add);
+        }
+    }
+
+    public List<Tile> centralMarket() {
+        return List.copyOf(centralMarket);
+    }
+
+    public Optional<Tile> getCentralMarket(int index) {
+        if (index < 0 || index >= centralMarket.size()) {
+            return Optional.empty();
+        }
+        return Optional.of(centralMarket.get(index));
+    }
+
+    public Optional<Tile> removeCentralMarketAt(int index) {
+        if (index < 0 || index >= centralMarket.size()) {
+            return Optional.empty();
+        }
+        return Optional.of(centralMarket.remove(index));
     }
 
     public void removeAll() {

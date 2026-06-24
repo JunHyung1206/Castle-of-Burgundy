@@ -117,6 +117,20 @@ public final class PersonalBoard {
         return true;
     }
 
+    /**
+     * startCellId가 속한 같은 타입 구역에서 실제로 타일이 놓인 칸들의 타일 목록.
+     */
+    public List<Tile> placedTilesInRegion(int startCellId) {
+        List<Tile> result = new ArrayList<>();
+        for (int id : sameTypeRegion(startCellId)) {
+            Tile t = placed.get(id);
+            if (t != null) {
+                result.add(t);
+            }
+        }
+        return result;
+    }
+
     public int completedRegionSizeIfAny(int startCellId) {
         Set<Integer> region = sameTypeRegion(startCellId);
         if (region.isEmpty()) {

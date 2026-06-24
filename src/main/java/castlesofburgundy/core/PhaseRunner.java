@@ -2,6 +2,7 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.player.Player;
+import castlesofburgundy.tile.TileType;
 
 public class PhaseRunner {
 
@@ -49,7 +50,22 @@ public class PhaseRunner {
             }
         }
 
+        endPhase(players);
+
         ui.message("\n=== Phase " + phase + " 종료 ===");
+    }
+
+    /**
+     * 페이즈 종료 정산: 영지에 놓인 광산 1개당 은화 1개를 받는다.
+     */
+    void endPhase(Player[] players) {
+        for (Player player : players) {
+            int mines = player.countPlacedOfType(TileType.MINE);
+            if (mines > 0) {
+                player.addSilver(mines);
+                ui.message(player.getName() + ": 광산 " + mines + "개 → 은화 +" + mines);
+            }
+        }
     }
 
     /**

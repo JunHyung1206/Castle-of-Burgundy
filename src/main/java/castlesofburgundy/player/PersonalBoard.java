@@ -144,6 +144,19 @@ public final class PersonalBoard {
         return region.size();
     }
 
+    /**
+     * 영지에 실제로 놓인 타일 중 해당 타입의 개수.
+     */
+    public int countPlacedOfType(TileType type) {
+        int n = 0;
+        for (Tile t : placed.values()) {
+            if (t.type() == type) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     public PersonalLayout getLayout() {
         return layout;
     }

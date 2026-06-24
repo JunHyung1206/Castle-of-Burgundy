@@ -1,6 +1,7 @@
 package castlesofburgundy.player;
 
 import castlesofburgundy.tile.Tile;
+import castlesofburgundy.tile.TileType;
 
 import java.util.List;
 import java.util.Set;
@@ -64,6 +65,10 @@ public final class Player {
 
     public int completedRegionSizeIfAny(int cellId) {
         return board.completedRegionSizeIfAny(cellId);
+    }
+
+    public int countPlacedOfType(TileType type) {
+        return board.countPlacedOfType(type);
     }
 
     public void addScore(int value) {

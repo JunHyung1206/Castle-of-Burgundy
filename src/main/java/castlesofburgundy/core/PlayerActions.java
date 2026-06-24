@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.*;
-import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
 
@@ -38,15 +37,11 @@ public final class PlayerActions {
             int dieUsed,
             Phase phase
     ) {
-        // 먼저 어떤 타일인지 꺼내고
-        Tile tile = player.getStorage().view().get(storageId);
-
-        // 배치(실제 보드에 놓기)
-        player.placeTileFromStorage(storageId, cellId, dieUsed);
+        // 배치(실제 보드에 놓기) — 놓인 타일을 그대로 돌려받는다
+        Tile tile = player.placeTileFromStorage(storageId, cellId, dieUsed);
 
         // 1) 구역 완성 점수
-        PersonalBoard board = player.getBoard();
-        int regionSize = board.completedRegionSizeIfAny(cellId);
+        int regionSize = player.completedRegionSizeIfAny(cellId);
         if (regionSize > 0) {
             int regionScore = phaseBonus(phase) + regionSizeBonus(regionSize);
             player.addScore(regionScore);

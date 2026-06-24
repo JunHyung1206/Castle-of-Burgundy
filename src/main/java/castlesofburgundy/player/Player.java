@@ -2,6 +2,9 @@ package castlesofburgundy.player;
 
 import castlesofburgundy.tile.Tile;
 
+import java.util.List;
+import java.util.Set;
+
 public final class Player {
     private final PersonalBoard board;
     private final Storage storage;
@@ -26,6 +29,18 @@ public final class Player {
         storage.add(tile);
     }
 
+    public boolean isStorageEmpty() {
+        return storage.isEmpty();
+    }
+
+    public boolean isStorageFull() {
+        return storage.isFull();
+    }
+
+    public List<Tile> storedTiles() {
+        return storage.view();
+    }
+
     public int spendWorkers(int usedWorkers) {
         if (usedWorkers < 0) {
             throw new IllegalArgumentException("workersToSpend >= 0");
@@ -37,9 +52,18 @@ public final class Player {
         return workers;
     }
 
-    public void placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
+    public Tile placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
         Tile tile = storage.removeAt(storageId);
         board.place(cellId, tile, dieUsed);
+        return tile;
+    }
+
+    public Set<Integer> legalPlacements(Tile tile, int dieUsed) {
+        return board.legalPlacements(tile, dieUsed);
+    }
+
+    public int completedRegionSizeIfAny(int cellId) {
+        return board.completedRegionSizeIfAny(cellId);
     }
 
     public void addScore(int value) {

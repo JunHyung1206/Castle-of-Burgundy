@@ -23,7 +23,7 @@ public final class PlayerConsoleView {
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Personal Board ===\n");
 
-        int[][] g = layout.getGrid().rows();
+        int[][] g = layout.gridRows();
         for (int r = 0; r < g.length; r++) {
             if ((r & 1) == 0) sb.append(" ".repeat(CELL_W / 2));
 
@@ -98,7 +98,7 @@ public final class PlayerConsoleView {
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Personal Board ===\n");
 
-        int[][] g = layout.getGrid().rows();
+        int[][] g = layout.gridRows();
         for (int r = 0; r < g.length; r++) {
             if ((r & 1) == 0) sb.append(" ".repeat(6)); // 비슷한 indentation
 

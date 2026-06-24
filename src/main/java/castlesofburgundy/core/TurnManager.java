@@ -2,7 +2,6 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.board.BoardSlot;
 import castlesofburgundy.board.BoardState;
-import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
 
@@ -95,18 +94,17 @@ public final class TurnManager {
                                             String prefix,
                                             Phase phase,
                                             List<Action> actions) {
-        if (player.getStorage().isEmpty()) {
+        if (player.isStorageEmpty()) {
             return;
         }
 
-        List<Tile> stored = player.getStorage().view();
-        PersonalBoard board = player.getBoard();
+        List<Tile> stored = player.storedTiles();
 
         for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
             Tile t = stored.get(storageIndex);
             int sIdx = storageIndex;
 
-            for (int cellId : board.legalPlacements(t, adjustedDie)) {
+            for (int cellId : player.legalPlacements(t, adjustedDie)) {
                 String desc = prefix + "저장소[" + sIdx + "]의 " + t.type() + " 를 cell " + cellId + " 에 배치";
 
                 actions.add(new Action(desc, () -> {
@@ -123,7 +121,7 @@ public final class TurnManager {
                                          int adjustedDie,
                                          String prefix,
                                          List<Action> actions) {
-        if (player.getStorage().isFull()) {
+        if (player.isStorageFull()) {
             return;
         }
 

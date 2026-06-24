@@ -81,7 +81,17 @@ public final class PersonalLayout {
         return cells.values();
     }
 
-    public PersonalGrid getGrid() {
-        return grid;
+    /**
+     * cellId에 인접한 칸들. (기하 객체를 밖으로 노출하지 않고 위임한다)
+     */
+    public List<Integer> getNeighbors(int cellId) {
+        return grid.getNeighbors(cellId);
+    }
+
+    /**
+     * 렌더링용 행 단위 그리드 모양(복사본).
+     */
+    public int[][] gridRows() {
+        return grid.rows();
     }
 }

@@ -65,9 +65,14 @@ public final class PersonalGrid {
 
     /**
      * 행 단위 그리드 모양(렌더링용). 음수는 빈 자리를 뜻한다.
+     * 내부 배열을 보호하기 위해 복사본을 돌려준다.
      */
     public int[][] rows() {
-        return grid;
+        int[][] copy = new int[grid.length][];
+        for (int r = 0; r < grid.length; r++) {
+            copy[r] = grid[r].clone();
+        }
+        return copy;
     }
 
     public List<Integer> getNeighbors(int target) {

@@ -12,7 +12,7 @@ public class AppMain {
 
         GameContext ctx = GameContextFactory.startNewGame(seed);
 
-        Player[] players = PlayerSetup.setupPlayers(ui, 1); // 나중에 2로 바꾸면 2인플
+        Player[] players = PlayerSetup.setupPlayers(ui);
 
         TurnManager tm = new TurnManager(ctx, ui);
         RoundManager rm = new RoundManager();

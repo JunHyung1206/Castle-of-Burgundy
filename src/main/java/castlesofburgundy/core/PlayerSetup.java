@@ -7,7 +7,10 @@ public final class PlayerSetup {
 
     private PlayerSetup() {}
 
-    public static Player[] setupPlayers(GameUi ui, int playerCount) {
+    private static final int STORAGE_CAPACITY = 3;
+
+    public static Player[] setupPlayers(GameUi ui) {
+        int playerCount = readPlayerCount(ui);
         Player[] players = new Player[playerCount];
         PersonalLayout layout = new PersonalLayout();  // 공통 레이아웃 재사용
 
@@ -29,9 +32,27 @@ public final class PlayerSetup {
             ui.message("\n--- 성 배치 완료 (" + name + ") ---");
             ui.showPersonalBoard(board);
 
-            players[i] = new Player(board, 3, name); // 기본 일꾼 2개 생성자
+            // 시작 플레이어부터 일꾼 1, 2, 3, 4개 + 은화 1개
+            // TODO: 무작위 상품 타일 3개 지급 (상품 시스템 구현 후)
+            Player player = new Player(board, STORAGE_CAPACITY, name, i + 1);
+            player.addSilver(1);
+            players[i] = player;
         }
         return players;
+    }
+
+    private static int readPlayerCount(GameUi ui) {
+        while (true) {
+            String line = ui.askLine("플레이어 수를 입력하세요 (1~4): ");
+            try {
+                int n = Integer.parseInt(line.trim());
+                if (n >= 1 && n <= 4) {
+                    return n;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+            ui.message("1~4 사이 숫자를 입력하세요.");
+        }
     }
 
     private static int chooseInitialCastleCell(PersonalLayout layout, GameUi ui, String playerName) {

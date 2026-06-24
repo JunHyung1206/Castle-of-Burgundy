@@ -1,6 +1,8 @@
 package castlesofburgundy.view;
 
 import castlesofburgundy.player.*;
+import castlesofburgundy.tile.AnimalSpecies;
+import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 
@@ -40,8 +42,10 @@ public final class PlayerConsoleView {
                     continue;
                 }
 
-                String inner = id + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die();
                 boolean placed = board.isOccupied(id);
+                String inner = board.getPlacedTile(id)
+                        .map(tile -> cellInner(cell, tile))
+                        .orElseGet(() -> cell.id() + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die());
                 sb.append(box(inner, cell.type(), placed)).append(GAP);
             }
             sb.append("\n");
@@ -85,12 +89,35 @@ public final class PlayerConsoleView {
             sb.append("#")
                     .append(i)
                     .append(" : ")
-                    .append(t.type())
+                    .append(tileSummary(t))
                     .append(" (id=")
                     .append(t.id())
                     .append(")\n");
         }
         return sb.toString();
+    }
+
+    private static String cellInner(PersonalCell cell, Tile tile) {
+        if (tile instanceof AnimalTile animal) {
+            return cell.id() + ":" + animalShortName(animal.species()) + animal.count() + "/" + cell.die();
+        }
+        return cell.id() + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die();
+    }
+
+    private static String tileSummary(Tile tile) {
+        if (tile instanceof AnimalTile animal) {
+            return tile.type() + " " + animal.species() + " x" + animal.count();
+        }
+        return tile.type().toString();
+    }
+
+    private static String animalShortName(AnimalSpecies species) {
+        return switch (species) {
+            case SHEEP -> "Sh";
+            case COW -> "Co";
+            case PIG -> "Pi";
+            case CHICKEN -> "Ch";
+        };
     }
 
     public static String renderBoardOnly(PersonalBoard board) {
@@ -112,7 +139,9 @@ public final class PlayerConsoleView {
                 PersonalCell cell = layout.get(id);
                 boolean placed = board.isOccupied(id);
 
-                String inner = id + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die();
+                String inner = board.getPlacedTile(id)
+                        .map(tile -> cellInner(cell, tile))
+                        .orElseGet(() -> id + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die());
                 sb.append(box(inner, cell.type(), placed)).append(" ");
             }
             sb.append("\n");

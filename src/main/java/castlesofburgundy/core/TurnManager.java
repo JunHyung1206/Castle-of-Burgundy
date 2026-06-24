@@ -4,6 +4,7 @@ import castlesofburgundy.board.BoardSlot;
 import castlesofburgundy.board.BoardState;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
+import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BuildingKind;
 import castlesofburgundy.tile.BuildingTile;
 import castlesofburgundy.tile.Tile;
@@ -58,12 +59,15 @@ public final class TurnManager {
     public record Action(String description, BooleanSupplier apply) {
     }
 
+    private record DieSetting(int adjustedDie, String label) {
+    }
+
     private void handleDie(Player player, int die, int dieIndex, Phase phase) {
         ui.message("\n[" + dieIndex + "번째 주사위: " + die + "]");
         ui.message("현재 일꾼 수 : " + player.getWorkers());
 
         List<Action> actions = buildOptionsForDie(player, die, phase);
-        ui.message(renderActionContext(player));
+        ui.message(renderActionContext(player, die));
 
         Action selected = chooseAction(actions);
         boolean grantsExtraAction = selected.apply().getAsBoolean();
@@ -394,16 +398,20 @@ public final class TurnManager {
         }));
     }
 
-    private String renderActionContext(Player player) {
+    private String renderActionContext(Player player, int baseDie) {
         return """
                 [현재 상태]
                 타일 저장소: %s
                 보유 상품: %s
+                판매 가능: %s
+                동물 점수 후보: %s
                 창고 상품: %s
                 은화/점수: %d/%d
                 """.formatted(
                 storageSummary(player),
                 goodsSummary(player),
+                sellableGoodsSummary(player, baseDie),
+                animalScoreCandidatesSummary(player, baseDie),
                 warehouseGoodsSummary(),
                 player.getSilver(),
                 player.getScore()
@@ -419,9 +427,16 @@ public final class TurnManager {
         List<String> parts = new ArrayList<>();
         for (int i = 0; i < stored.size(); i++) {
             Tile tile = stored.get(i);
-            parts.add("#" + i + "=" + tile.type() + "(" + tile.id() + ")");
+            parts.add("#" + i + "=" + tileSummary(tile));
         }
         return String.join(", ", parts);
+    }
+
+    private String tileSummary(Tile tile) {
+        if (tile instanceof AnimalTile animal) {
+            return tile.type() + ":" + animal.species() + " x" + animal.count() + "(" + tile.id() + ")";
+        }
+        return tile.type() + "(" + tile.id() + ")";
     }
 
     private String goodsSummary(Player player) {
@@ -433,6 +448,71 @@ public final class TurnManager {
             }
         }
         return parts.isEmpty() ? "(empty)" : String.join(", ", parts);
+    }
+
+    private String sellableGoodsSummary(Player player, int baseDie) {
+        List<String> parts = new ArrayList<>();
+        for (DieSetting setting : dieSettings(baseDie, player.getWorkers())) {
+            GoodsColor color = GoodsColor.forDie(setting.adjustedDie());
+            int count = player.goods().count(color);
+            if (count > 0) {
+                parts.add(setting.label() + " 주사위 " + setting.adjustedDie()
+                        + " -> " + color + " " + count + "개 판매 가능"
+                        + " (+은화 1, +" + (count * playerCount) + "점)");
+            }
+        }
+        return parts.isEmpty() ? "(없음)" : "\n- " + String.join("\n- ", parts);
+    }
+
+    private String animalScoreCandidatesSummary(Player player, int baseDie) {
+        if (player.isStorageEmpty()) {
+            return "(없음)";
+        }
+
+        List<String> parts = new ArrayList<>();
+        List<Tile> stored = player.storedTiles();
+        for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
+            Tile tile = stored.get(storageIndex);
+            if (!(tile instanceof AnimalTile animal)) {
+                continue;
+            }
+
+            for (DieSetting setting : dieSettings(baseDie, player.getWorkers())) {
+                for (int cellId : player.legalPlacements(animal, setting.adjustedDie())) {
+                    int score = animalScoreIfPlaced(player, animal, cellId);
+                    parts.add(setting.label() + " 주사위 " + setting.adjustedDie()
+                            + " -> 저장소[" + storageIndex + "] "
+                            + animal.species() + " x" + animal.count()
+                            + " cell " + cellId + " 배치 시 +" + score + "점");
+                }
+            }
+        }
+        return parts.isEmpty() ? "(없음)" : "\n- " + String.join("\n- ", parts);
+    }
+
+    private int animalScoreIfPlaced(Player player, AnimalTile animal, int cellId) {
+        int score = animal.count();
+        for (Tile placed : player.getBoard().placedTilesInRegion(cellId)) {
+            if (placed instanceof AnimalTile other && other.species() == animal.species()) {
+                score += other.count();
+            }
+        }
+        return score;
+    }
+
+    private List<DieSetting> dieSettings(int baseDie, int availableWorkers) {
+        List<DieSetting> settings = new ArrayList<>();
+        settings.add(new DieSetting(baseDie, "현재"));
+
+        int maxWorkersToUse = Math.min(3, availableWorkers);
+        for (int used = 1; used <= maxWorkersToUse; used++) {
+            settings.add(new DieSetting(wrapAdd(baseDie, -used), "일꾼 " + used + "개 사용"));
+            if (used == 3) {
+                break;
+            }
+            settings.add(new DieSetting(wrapAdd(baseDie, used), "일꾼 " + used + "개 사용"));
+        }
+        return settings;
     }
 
     private String warehouseGoodsSummary() {

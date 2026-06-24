@@ -35,6 +35,10 @@ public final class PersonalBoard {
         return placed.containsKey(cellId);
     }
 
+    public Optional<Tile> getPlacedTile(int cellId) {
+        return Optional.ofNullable(placed.get(cellId));
+    }
+
     public boolean canPlace(int cellId, Tile tile, int dieUsed) {
         PersonalCell cell = layout.get(cellId);
         if (cell == null || tile == null) {

@@ -6,6 +6,8 @@ import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.player.Player;
+import castlesofburgundy.tile.AnimalSpecies;
+import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BaseTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
@@ -21,11 +23,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TurnManagerTest {
 
     private GameContext simpleContext() {
+        return simpleContext(1L);
+    }
+
+    private GameContext simpleContext(long diceSeed) {
         GameBoardLayout layout = new GameBoardLayout();
         TileSupplier supplier = new TileSupplier(1L);
         BoardState boardState = new BoardState(layout);
         boardState.fillAllFromSupply(supplier);
-        return new GameContext(1L, layout, boardState, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
+        return new GameContext(1L, layout, boardState, supplier, new Dice(diceSeed), new castlesofburgundy.goods.GoodsSupply(1L));
     }
 
     private Player newPlayer() {
@@ -143,5 +149,43 @@ class TurnManagerTest {
         assertThat(ui.messaged("타일 저장소")).isTrue();
         assertThat(ui.messaged("보유 상품")).isTrue();
         assertThat(ui.messaged("창고 상품")).isTrue();
+    }
+
+    @Test
+    @DisplayName("액션 선택지 전에 현재 주사위로 팔 수 있는 상품을 보여준다")
+    void playerTurnShowsSellableGoodsBeforeChoices() {
+        GameContext ctx = simpleContext(5L); // 첫 주사위 6
+        RecordingGameUi ui = new RecordingGameUi();
+        ui.scriptChoices(0, 0);
+        TurnManager tm = new TurnManager(ctx, ui, 2);
+        Player p = newPlayer();
+        p.addGoods(GoodsColor.TEAL);
+
+        tm.playerTurn(p, Phase.A);
+
+        assertThat(ui.messaged("판매 가능")).isTrue();
+        assertThat(ui.messaged("현재 주사위 6")).isTrue();
+        assertThat(ui.messaged("TEAL 1개")).isTrue();
+    }
+
+    @Test
+    @DisplayName("액션 선택지 전에 동물 배치 점수 후보를 보여준다")
+    void playerTurnShowsAnimalScoreCandidatesBeforeChoices() {
+        GameContext ctx = simpleContext(5L); // 첫 주사위 6
+        RecordingGameUi ui = new RecordingGameUi();
+        ui.scriptChoices(0, 0);
+        TurnManager tm = new TurnManager(ctx, ui, 2);
+
+        PersonalBoard board = new PersonalBoard(new PersonalLayout());
+        board.setupInitialCastle(2);
+        Player p = new Player(board, 3, "P1");
+        p.addToStorage(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
+
+        tm.playerTurn(p, Phase.A);
+
+        assertThat(ui.messaged("동물 점수 후보")).isTrue();
+        assertThat(ui.messaged("저장소[0] SHEEP x3")).isTrue();
+        assertThat(ui.messaged("cell 1")).isTrue();
+        assertThat(ui.messaged("+3점")).isTrue();
     }
 }

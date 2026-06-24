@@ -1,6 +1,7 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.*;
+import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
@@ -110,5 +111,33 @@ class PlayerActionsTest {
     private PlacementOutcome place(Player p, TileType type, int cellId, int die) {
         p.addToStorage(BaseTile.of(type, cellId));
         return PlayerActions.placeTileFromStorage(p, 0, cellId, die, Phase.A);
+    }
+
+    @Test
+    @DisplayName("상품 판매: 해당 색 전체를 팔아 은화 1개 + 타일당 플레이어 수만큼 점수")
+    void sellGoodsGivesSilverAndScore() {
+        Player p = newPlayer();
+        p.addGoods(GoodsColor.RED);
+        p.addGoods(GoodsColor.RED);
+        p.addGoods(GoodsColor.RED);
+
+        int sold = PlayerActions.sellGoods(p, GoodsColor.RED, 3);
+
+        assertThat(sold).isEqualTo(3);
+        assertThat(p.getSilver()).isEqualTo(1);     // 개수와 무관하게 은화 1
+        assertThat(p.getScore()).isEqualTo(3 * 3);  // 타일당 3점(3인) × 3개
+        assertThat(p.goods().count(GoodsColor.RED)).isZero();
+    }
+
+    @Test
+    @DisplayName("판매할 상품이 없으면 아무 보상도 없다")
+    void sellNothingNoReward() {
+        Player p = newPlayer();
+
+        int sold = PlayerActions.sellGoods(p, GoodsColor.BROWN, 4);
+
+        assertThat(sold).isZero();
+        assertThat(p.getSilver()).isZero();
+        assertThat(p.getScore()).isZero();
     }
 }

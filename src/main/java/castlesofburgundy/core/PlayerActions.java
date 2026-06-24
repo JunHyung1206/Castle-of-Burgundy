@@ -1,6 +1,7 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.*;
+import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
 
@@ -69,6 +70,21 @@ public final class PlayerActions {
 
     public static void takeWorkers(Player player) {
         player.gainWorkers(2);
+    }
+
+    /**
+     * 해당 색 상품을 전부 판매한다.
+     * 판매가 일어나면 은화 1개(개수 무관) + 타일당 playerCount(2/3/4인) 점수를 얻는다.
+     *
+     * @return 판매한 타일 수(0이면 그 색 상품이 없어 아무 일도 안 일어남)
+     */
+    public static int sellGoods(Player player, GoodsColor color, int playerCount) {
+        int sold = player.goods().sell(color);
+        if (sold > 0) {
+            player.addSilver(1);
+            player.addScore(sold * playerCount);
+        }
+        return sold;
     }
 
     private static int phaseBonus(Phase phase) {

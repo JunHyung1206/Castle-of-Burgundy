@@ -50,7 +50,7 @@ public final class PersonalBoard {
             return false;
         }
         // 인접성: 이미 놓인 칸과 인접해야 함(시작 성 제외)
-        List<Integer> neighbors = PersonalGrid.getNeighbors(cellId);
+        List<Integer> neighbors = layout.getGrid().getNeighbors(cellId);
         return neighbors.stream().anyMatch(placed::containsKey);
     }
 
@@ -90,7 +90,7 @@ public final class PersonalBoard {
 
         while (!dq.isEmpty()) {
             int cur = dq.poll();
-            for (int nb : PersonalGrid.getNeighbors(cur)) {
+            for (int nb : layout.getGrid().getNeighbors(cur)) {
                 if (visited.contains(nb)) {
                     continue;
                 }

@@ -6,8 +6,13 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
-public class PersonalGrid {
-    public static final int[][] GRID = new int[][]{
+/**
+ * 한 공작 영지(개인 보드)의 기하: 어떤 칸이 존재하고, 칸끼리 어떻게 인접하는지.
+ * 칸의 타입/주사위 같은 속성은 PersonalLayout이 담당한다.
+ * (보드별로 기하가 다르므로 인스턴스로 둔다. 현재는 보드 1번만 제공)
+ */
+public final class PersonalGrid {
+    private static final int[][] BOARD_ONE = new int[][]{
             {-1, 1, 2, 3, 4, -1, -1},
             {-1, 5, 6, 7, 8, 9, -1},
             {10, 11, 12, 13, 14, 15, -1},
@@ -29,33 +34,44 @@ public class PersonalGrid {
             {1, -1}, {1, 0}
     };
 
+    private final int[][] grid;
+    private final Map<Integer, int[]> indexByCell = new HashMap<>();
 
-    private static final Map<Integer, int[]> INDEX_BY_CELL = new HashMap<>();
+    public PersonalGrid() {
+        this(BOARD_ONE);
+    }
 
-    static {
-        for (int r = 0; r < GRID.length; r++) {
-            for (int c = 0; c < GRID[r].length; c++) {
+    private PersonalGrid(int[][] grid) {
+        this.grid = grid;
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[r].length; c++) {
                 putIfValid(r, c);
             }
         }
     }
 
-    private static void putIfValid(int r, int c) {
-        int cell = GRID[r][c];
+    private void putIfValid(int r, int c) {
         if (isValidCell(r, c)) {
-            INDEX_BY_CELL.put(cell, new int[]{r, c});
+            indexByCell.put(grid[r][c], new int[]{r, c});
         }
     }
 
     /**
      * 그리드에 정의된 유효한 칸(양수) id 전체. PersonalLayout과의 정합성 검증에 사용.
      */
-    public static Set<Integer> validCells() {
-        return Set.copyOf(INDEX_BY_CELL.keySet());
+    public Set<Integer> validCells() {
+        return Set.copyOf(indexByCell.keySet());
     }
 
-    public static List<Integer> getNeighbors(int target) {
-        int[] index = INDEX_BY_CELL.get(target);
+    /**
+     * 행 단위 그리드 모양(렌더링용). 음수는 빈 자리를 뜻한다.
+     */
+    public int[][] rows() {
+        return grid;
+    }
+
+    public List<Integer> getNeighbors(int target) {
+        int[] index = indexByCell.get(target);
         if (index == null) {
             return List.of();
         }
@@ -73,20 +89,20 @@ public class PersonalGrid {
             int nr = row + d[0];
             int nc = col + d[1];
             if (isInBounds(nr, nc) && isValidCell(nr, nc)) {
-                neighbors.add(GRID[nr][nc]);
+                neighbors.add(grid[nr][nc]);
             }
         }
         return neighbors;
     }
 
-    private static boolean isInBounds(int r, int c) {
-        if (r < 0 || r >= GRID.length) {
+    private boolean isInBounds(int r, int c) {
+        if (r < 0 || r >= grid.length) {
             return false;
         }
-        return c >= 0 && c < GRID[r].length;
+        return c >= 0 && c < grid[r].length;
     }
 
-    private static boolean isValidCell(int r, int c) {
-        return GRID[r][c] > 0; // 유효한 셀 번호만
+    private boolean isValidCell(int r, int c) {
+        return grid[r][c] > 0; // 유효한 셀 번호만
     }
 }

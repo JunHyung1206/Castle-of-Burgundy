@@ -6,6 +6,7 @@ import java.util.*;
 
 public final class PersonalLayout {
     private final Map<Integer, PersonalCell> cells = new LinkedHashMap<>();
+    private final PersonalGrid grid = new PersonalGrid();
 
     public PersonalLayout() {
         add(new PersonalCell(1, TileType.ANIMAL, 6));
@@ -60,7 +61,7 @@ public final class PersonalLayout {
      * 한쪽만 수정해 두 정의가 어긋나는 것을 생성 시점에 막는다.
      */
     private void validateAgainstGrid() {
-        Set<Integer> gridCells = PersonalGrid.validCells();
+        Set<Integer> gridCells = grid.validCells();
         if (!cells.keySet().equals(gridCells)) {
             throw new IllegalStateException(
                     "PersonalLayout과 PersonalGrid의 칸 집합이 일치하지 않습니다. "
@@ -78,5 +79,9 @@ public final class PersonalLayout {
 
     public Collection<PersonalCell> all() {
         return cells.values();
+    }
+
+    public PersonalGrid getGrid() {
+        return grid;
     }
 }

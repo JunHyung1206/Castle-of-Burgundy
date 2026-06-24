@@ -81,7 +81,7 @@ public final class PlayerActions {
         };
     }
 
-    private static int regionSizeBonus(int size) {
+    static int regionSizeBonus(int size) { // 같은 패키지 테스트에서 표 전체를 검증하기 위해 package-private
         return switch (size) {
             case 1 -> 1;
             case 2 -> 3;

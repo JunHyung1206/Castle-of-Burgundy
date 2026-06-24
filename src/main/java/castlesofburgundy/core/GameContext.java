@@ -7,6 +7,7 @@ public record GameContext(
         long seed,
         GameBoardLayout layout,
         BoardState boardState,
-        TileSupplier tileSupplier
+        TileSupplier tileSupplier,
+        Dice dice
 ) {
 }

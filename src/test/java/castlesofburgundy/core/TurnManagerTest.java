@@ -32,7 +32,7 @@ class TurnManagerTest {
         TileSupplier supplier = new TileSupplier(counts, 1L);
         BoardState boardState = new BoardState(layout);
         boardState.fillAllFromSupply(supplier);
-        return new GameContext(1L, layout, boardState, supplier);
+        return new GameContext(1L, layout, boardState, supplier, new Dice(1L));
     }
 
     private Player newPlayer() {

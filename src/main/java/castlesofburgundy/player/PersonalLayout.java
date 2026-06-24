@@ -51,6 +51,21 @@ public final class PersonalLayout {
         add(new PersonalCell(35, TileType.KNOWLEDGE, 4));
         add(new PersonalCell(36, TileType.KNOWLEDGE, 1));
         add(new PersonalCell(37, TileType.BUILDING, 3));
+
+        validateAgainstGrid();
+    }
+
+    /**
+     * 이 레이아웃이 정의한 칸 집합이 PersonalGrid의 기하(이웃) 정의와 정확히 일치하는지 확인.
+     * 한쪽만 수정해 두 정의가 어긋나는 것을 생성 시점에 막는다.
+     */
+    private void validateAgainstGrid() {
+        Set<Integer> gridCells = PersonalGrid.validCells();
+        if (!cells.keySet().equals(gridCells)) {
+            throw new IllegalStateException(
+                    "PersonalLayout과 PersonalGrid의 칸 집합이 일치하지 않습니다. "
+                            + "layout=" + cells.keySet() + ", grid=" + gridCells);
+        }
     }
 
     private void add(PersonalCell c) {

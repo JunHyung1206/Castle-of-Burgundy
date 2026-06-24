@@ -3,11 +3,18 @@ package castlesofburgundy.core;
 
 import java.util.Random;
 
-public class Dice {
-    public static int roll() {
-        Random random = new Random();
+public final class Dice {
+    private final Random random;
 
-        return random.nextInt(1,7);
+    public Dice() {
+        this.random = new Random();
+    }
 
+    public Dice(long seed) {
+        this.random = new Random(seed);
+    }
+
+    public int roll() {
+        return random.nextInt(1, 7);
     }
 }

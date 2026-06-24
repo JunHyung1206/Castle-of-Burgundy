@@ -21,8 +21,8 @@ public final class TurnManager {
 
     public void playerTurn(Player player, Phase phase) {
         System.out.println("\n===" + player.getName() + "의 턴 ===");
-        int d1 = Dice.roll();
-        int d2 = Dice.roll();
+        int d1 = ctx.dice().roll();
+        int d2 = ctx.dice().roll();
 
         System.out.println("굴린 주사위: " + d1 + ", " + d2);
 
@@ -112,9 +112,9 @@ public final class TurnManager {
                 options.add(new Option(desc, () -> {
                     player.spendWorkers(usedWorkers);
 
-                    TilePlacementResult result = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
+                    boolean grantExtraAction = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
 
-                    if (result.grantExtraAction()) {
+                    if (grantExtraAction) {
                         System.out.println("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
                         runCastleExtraAction(player, phase);
                     }

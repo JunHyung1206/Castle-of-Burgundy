@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 public class PersonalGrid {
     public static final int[][] GRID = new int[][]{
@@ -44,6 +45,13 @@ public class PersonalGrid {
         if (isValidCell(r, c)) {
             INDEX_BY_CELL.put(cell, new int[]{r, c});
         }
+    }
+
+    /**
+     * 그리드에 정의된 유효한 칸(양수) id 전체. PersonalLayout과의 정합성 검증에 사용.
+     */
+    public static Set<Integer> validCells() {
+        return Set.copyOf(INDEX_BY_CELL.keySet());
     }
 
     public static List<Integer> getNeighbors(int target) {

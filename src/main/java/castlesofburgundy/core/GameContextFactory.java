@@ -26,6 +26,6 @@ public final class GameContextFactory {
         BoardState boardState = new BoardState(layout);
 
         boardState.fillAllFromSupply(supplier);
-        return new GameContext(seed, layout, boardState, supplier);
+        return new GameContext(seed, layout, boardState, supplier, new Dice(seed));
     }
 }

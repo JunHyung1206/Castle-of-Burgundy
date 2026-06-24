@@ -32,4 +32,11 @@ class BoardSlotTest {
         });
 
     }
+
+    @Test
+    @DisplayName("slot index가 0~3 범위를 벗어나면 오류가 발생한다")
+    void invalidIndex() {
+        assertThrows(IllegalArgumentException.class, () -> new BoardSlot(1, 4));
+        assertThrows(IllegalArgumentException.class, () -> new BoardSlot(1, -1));
+    }
 }

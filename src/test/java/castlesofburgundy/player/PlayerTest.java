@@ -3,7 +3,6 @@ package castlesofburgundy.player;
 import castlesofburgundy.tile.BaseTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
-import castlesofburgundy.view.PlayerConsoleView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,16 +58,46 @@ class PlayerTest {
         player.addToStorage(tile2);
         player.addToStorage(tile3);
 
-        System.out.println(PlayerConsoleView.render(player));
-
-
-        player.placeTileFromStorage(1, 20, 5);
+        // tile2(SHIP)를 cell 20(SHIP/die5)에 배치 — 놓인 타일을 반환받는다
+        Tile placed = player.placeTileFromStorage(1, 20, 5);
+        assertThat(placed).isEqualTo(tile2);
         assertThat(player.getStorage().size()).isEqualTo(2);
-        System.out.println(PlayerConsoleView.render(player));
+        assertThat(player.getBoard().isOccupied(20)).isTrue();
 
+        // 남은 [tile1, tile3] 중 index0(tile1, KNOWLEDGE)을 cell 13(KNOWLEDGE/die1)에 배치
         player.placeTileFromStorage(0, 13, 1);
         assertThat(player.getStorage().size()).isEqualTo(1);
-        System.out.println(PlayerConsoleView.render(player));
+        assertThat(player.getBoard().isOccupied(13)).isTrue();
+    }
+
+    @Test
+    @DisplayName("점수와 은화를 더하면 누적된다")
+    void scoreAndSilverAccumulate() {
+        assertThat(player.getScore()).isZero();
+        assertThat(player.getSilver()).isZero();
+
+        player.addScore(16);
+        player.addScore(4);
+        assertThat(player.getScore()).isEqualTo(20);
+
+        player.addSilver(2);
+        assertThat(player.getSilver()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("저장소 상태 위임 메소드가 Storage와 일치한다")
+    void storageDelegates() {
+        assertThat(player.isStorageEmpty()).isTrue();
+        assertThat(player.isStorageFull()).isFalse();
+        assertThat(player.storedTiles()).isEmpty();
+
+        player.addToStorage(BaseTile.of(TileType.ANIMAL, 1));
+        player.addToStorage(BaseTile.of(TileType.SHIP, 2));
+        player.addToStorage(BaseTile.of(TileType.MINE, 3));
+
+        assertThat(player.isStorageEmpty()).isFalse();
+        assertThat(player.isStorageFull()).isTrue();
+        assertThat(player.storedTiles()).hasSize(3);
     }
 
 

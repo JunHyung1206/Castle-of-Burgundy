@@ -5,6 +5,7 @@ import castlesofburgundy.player.Player;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.tile.BaseTile;
+import castlesofburgundy.tile.CastleTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 import org.junit.jupiter.api.DisplayName;
@@ -72,5 +73,52 @@ class PlayerActionsTest {
 
         assertThrows(IllegalStateException.class,
                 () -> PlayerActions.takeTileFromBoard(ctx, p, 1, 0));
+    }
+
+    @Test
+    @DisplayName("성 타일을 배치하면 추가 행동(grantsExtraAction)이 부여된다")
+    void placeCastleGrantsExtraAction() {
+        PersonalBoard pb = new PersonalBoard(new PersonalLayout());
+        pb.setupInitialCastle(7); // 성 군집 {2,3,7}의 7번에서 시작
+        Player p = new Player(pb, 3, "p");
+        p.addToStorage(new CastleTile(99));
+
+        // cell 2: CASTLE / die 5, 7번과 인접
+        PlacementOutcome outcome = PlayerActions.placeTileFromStorage(p, 0, 2, 5, Phase.A);
+
+        assertThat(outcome.grantsExtraAction()).isTrue();
+        assertThat(outcome.completedRegionSize()).isZero(); // {2,3,7} 중 3은 아직 비어 미완성
+    }
+
+    @Test
+    @DisplayName("성이 아닌 타일 배치는 추가 행동을 주지 않는다")
+    void placeNonCastleNoExtraAction() {
+        Player p = newPlayer();
+        p.addToStorage(BaseTile.of(TileType.KNOWLEDGE, 100));
+
+        // cell 13: KNOWLEDGE / die 1, 시작 성(19)과 인접
+        PlacementOutcome outcome = PlayerActions.placeTileFromStorage(p, 0, 13, 1, Phase.A);
+
+        assertThat(outcome.grantsExtraAction()).isFalse();
+        assertThat(outcome.completedRegionSize()).isZero();
+    }
+
+    @Test
+    @DisplayName("구역을 완성한 배치는 완성 크기와 점수를 결과로 알려준다")
+    void placeCompletingRegionReportsOutcome() {
+        Player p = newPlayer(); // 시작 성 19
+        // KNOWLEDGE 구역 {4,8,13}을 13→8→4 순으로 채운다 (성과 연결)
+        place(p, TileType.KNOWLEDGE, 13, 1);
+        place(p, TileType.KNOWLEDGE, 8, 5);
+        PlacementOutcome last = place(p, TileType.KNOWLEDGE, 4, 3);
+
+        assertThat(last.completedRegionSize()).isEqualTo(3);
+        // 페이즈 A(10) + 크기 3(6) = 16
+        assertThat(last.regionScore()).isEqualTo(16);
+    }
+
+    private PlacementOutcome place(Player p, TileType type, int cellId, int die) {
+        p.addToStorage(BaseTile.of(type, cellId));
+        return PlayerActions.placeTileFromStorage(p, 0, cellId, die, Phase.A);
     }
 }

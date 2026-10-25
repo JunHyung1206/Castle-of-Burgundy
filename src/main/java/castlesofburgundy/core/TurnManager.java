@@ -32,10 +32,29 @@ public final class TurnManager {
 
         ui.message("굴린 주사위: " + d1 + ", " + d2);
 
-        Turn turn = new Turn();
-        handleDie(player, d1, 1, phase, turn);
-        handleDie(player, d2, 2, phase, turn);
+        Turn turn = new Turn(d1, d2);
+        int actionNumber = 1;
+        while (!turn.remainingDice().isEmpty()) {
+            int die = chooseDie(turn);
+            turn.useDie(die);
+            handleDie(player, die, actionNumber++, phase, turn);
+        }
         offerCentralMarketAfterDice(player, turn);
+    }
+
+    /** 남은 주사위 중 이번 행동에 쓸 것을 고른다. 남은 눈이 하나뿐이면 묻지 않는다. */
+    private int chooseDie(Turn turn) {
+        List<Integer> dice = turn.remainingDice().stream().distinct().toList();
+        if (dice.size() == 1) {
+            return dice.get(0);
+        }
+
+        ui.message("\n사용할 주사위를 고르세요. (남은 주사위: " + turn.remainingDice() + ")");
+        List<String> options = new ArrayList<>();
+        for (int die : dice) {
+            options.add("주사위 " + die + " 사용");
+        }
+        return dice.get(ui.chooseIndex(options));
     }
 
     /**
@@ -52,8 +71,8 @@ public final class TurnManager {
     private record DieSetting(int adjustedDie, String label) {
     }
 
-    private void handleDie(Player player, int die, int dieIndex, Phase phase, Turn turn) {
-        ui.message("\n[" + dieIndex + "번째 주사위: " + die + "]");
+    private void handleDie(Player player, int die, int actionNumber, Phase phase, Turn turn) {
+        ui.message("\n[" + actionNumber + "번째 행동: 주사위 " + die + "]");
         while (true) {
             ui.message("현재 일꾼 수 : " + player.getWorkers());
 

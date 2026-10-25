@@ -5,6 +5,9 @@ import castlesofburgundy.tile.TileType;
 import java.util.*;
 
 public final class PersonalLayout {
+    /** 시작 성 칸: 영지 가운데의 짙은 초록 6번 칸. */
+    private static final int STARTING_CASTLE_CELL = 19;
+
     private final Map<Integer, PersonalCell> cells = new LinkedHashMap<>();
     private final PersonalGrid grid = new PersonalGrid();
 
@@ -71,6 +74,10 @@ public final class PersonalLayout {
 
     private void add(PersonalCell c) {
         cells.put(c.id(), c);
+    }
+
+    public int startingCastleCell() {
+        return STARTING_CASTLE_CELL;
     }
 
     public PersonalCell get(int id) {

@@ -23,7 +23,15 @@ public final class PersonalBoard {
     }
 
     /**
-     * 게임 시작 시 1회: 성 칸 아무 곳이나 무료 배치 (주사위/인접성 체크 없음)
+     * 게임 시작 시 1회: 영지 가운데 시작 성 칸에 성을 놓는다.
+     */
+    public void setupStartingCastle() {
+        setupInitialCastle(layout.startingCastleCell());
+    }
+
+    /**
+     * 성 칸 하나에 성을 무료 배치 (주사위/인접성 체크 없음).
+     * 게임은 setupStartingCastle을 쓰고, 이 메서드는 다른 칸에서 시작하는 상황을 만들 때 쓴다.
      */
     public void setupInitialCastle(int cellId) {
         PersonalCell cell = layout.get(cellId);

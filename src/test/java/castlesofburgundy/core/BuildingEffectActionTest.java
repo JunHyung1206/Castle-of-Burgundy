@@ -23,7 +23,7 @@ class BuildingEffectActionTest {
     private GameContext simpleContext() {
         GameBoard board = new GameBoard();
         TileSupplier supplier = new TileSupplier(1L);
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
         return new GameContext(1L, board, supplier, new Dice(1L), new GoodsSupply(1L));
     }
 

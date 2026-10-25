@@ -41,7 +41,7 @@ class DepotTest {
     void refillKeepsGoods() {
         board.depot(4).addGoods(GoodsColor.TEAL);
 
-        board.refillDepots(type -> Optional.empty());
+        board.refillDepots(4, type -> Optional.empty());
 
         assertThat(board.depot(4).goods()).containsExactly(GoodsColor.TEAL);
     }

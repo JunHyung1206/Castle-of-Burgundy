@@ -91,7 +91,7 @@ public class PhaseRunner {
      * 라운드 카운터를 초기화한다.
      */
     private void startNewPhase() {
-        ctx.board().refillDepots(ctx.tileSupplier()::draw);
+        ctx.board().refillDepots(ctx.board().turnOrder().currentOrder().size(), ctx.tileSupplier()::draw);
         ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         roundManager.resetForNewPhase();
     }

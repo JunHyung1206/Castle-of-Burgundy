@@ -42,7 +42,7 @@ class GameBoardTest {
     @Test
     @DisplayName("Supplier를 통해 전부 채워지는 기능이 동작한다.")
     void refillDepotsTest() {
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
 
         // 슬롯의 허용 타입대로 채워지는지 확인 (창고1 슬롯1=SHIP, 창고5 슬롯1=KNOWLEDGE)
         assertThat(board.depot(1).tileAt(1)).map(Tile::type).contains(TileType.SHIP);
@@ -52,10 +52,10 @@ class GameBoardTest {
     @Test
     @DisplayName("다시 채우면 남아 있던 타일은 치워지고 새 타일이 놓인다")
     void refillReplacesLeftovers() {
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
         Tile before = board.depot(1).tileAt(0).orElseThrow();
 
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
 
         assertThat(board.depot(1).tileAt(0).orElseThrow()).isNotSameAs(before);
     }
@@ -74,12 +74,44 @@ class GameBoardTest {
     @Test
     @DisplayName("칸에서 타일을 꺼내면 그 칸은 비워진다")
     void takeTileTest() {
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
 
         Optional<Tile> tile = board.depot(1).takeTile(1);
 
         assertThat(tile).isPresent();
         assertThat(board.depot(1).tileAt(1)).isEmpty();
         assertThat(board.depot(1).takeTile(1)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("인원수에 맞는 칸만 채운다: 2인 12칸, 3인 18칸, 4인 24칸")
+    void refillFillsSlotsByPlayerCount() {
+        board.refillDepots(2, supplier::draw);
+        assertThat(filledSlots()).isEqualTo(12);
+        assertThat(board.depot(1).tileAt(2)).isEmpty();
+
+        board.refillDepots(3, supplier::draw);
+        assertThat(filledSlots()).isEqualTo(18);
+        assertThat(board.depot(1).tileAt(3)).isEmpty();
+
+        board.refillDepots(4, supplier::draw);
+        assertThat(filledSlots()).isEqualTo(24);
+    }
+
+    @Test
+    @DisplayName("1인 게임은 2인 칸만 채우고, 4인을 넘으면 거부한다")
+    void refillPlayerCountBounds() {
+        board.refillDepots(1, supplier::draw);
+        assertThat(filledSlots()).isEqualTo(12);
+
+        assertThrows(IllegalArgumentException.class, () -> board.refillDepots(5, supplier::draw));
+        assertThrows(IllegalArgumentException.class, () -> board.refillDepots(0, supplier::draw));
+    }
+
+    private long filledSlots() {
+        return board.depots().stream()
+                .flatMap(depot -> java.util.stream.IntStream.range(0, depot.slotCount()).mapToObj(depot::tileAt))
+                .filter(Optional::isPresent)
+                .count();
     }
 }

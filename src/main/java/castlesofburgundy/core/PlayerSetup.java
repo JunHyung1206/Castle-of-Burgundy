@@ -2,7 +2,6 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.goods.GoodsSupply;
 import castlesofburgundy.player.*;
-import castlesofburgundy.tile.TileType;
 
 public final class PlayerSetup {
 
@@ -22,15 +21,9 @@ public final class PlayerSetup {
             }
 
             PersonalBoard board = new PersonalBoard(layout);
+            board.setupStartingCastle();
 
-            ui.message("\n--- 개인 보드 초기 상태 (" + name + ") ---");
-            ui.showPersonalBoard(board);
-
-            int castleCellId = chooseInitialCastleCell(layout, ui, name);
-
-            board.setupInitialCastle(castleCellId);
-
-            ui.message("\n--- 성 배치 완료 (" + name + ") ---");
+            ui.message("\n--- 개인 보드 초기 상태 (" + name + ", 시작 성: " + layout.startingCastleCell() + "번 칸) ---");
             ui.showPersonalBoard(board);
 
             // 시작 플레이어부터 일꾼 1, 2, 3, 4개 + 은화 1개 + 무작위 상품 3개
@@ -55,36 +48,6 @@ public final class PlayerSetup {
             } catch (NumberFormatException ignored) {
             }
             ui.message("1~4 사이 숫자를 입력하세요.");
-        }
-    }
-
-    private static int chooseInitialCastleCell(PersonalLayout layout, GameUi ui, String playerName) {
-        ui.message("\n=== " + playerName + " 시작 성 위치 선택 ===");
-
-        ui.message("선택 가능한 성 칸(id):");
-        layout.all().stream()
-                .filter(cell -> cell.type() == TileType.CASTLE)
-                .forEach(cell ->
-                        ui.message("id=" + cell.id() + " (die=" + cell.die() + ")")
-                );
-
-        while (true) {
-            String line = ui.askLine("성 시작 위치로 사용할 칸 id를 입력하세요: ");
-            try {
-                int id = Integer.parseInt(line);
-                PersonalCell cell = layout.get(id);
-                if (cell == null) {
-                    ui.message("존재하지 않는 칸입니다. 다시 입력하세요.");
-                    continue;
-                }
-                if (cell.type() != TileType.CASTLE) {
-                    ui.message("해당 칸은 성이 아닙니다. 다시 입력하세요.");
-                    continue;
-                }
-                return id;
-            } catch (NumberFormatException e) {
-                ui.message("숫자를 입력해 주세요.");
-            }
         }
     }
 }

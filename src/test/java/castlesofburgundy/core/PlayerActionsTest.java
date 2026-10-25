@@ -19,7 +19,7 @@ class PlayerActionsTest {
     private GameContext simpleContext() {
         TileSupplier supplier = new TileSupplier(42L);
         GameBoard board = new GameBoard();
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
         return new GameContext(1L, board, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
     }
 

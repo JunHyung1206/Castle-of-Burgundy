@@ -10,11 +10,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PlayerSetupTest {
 
     @Test
-    @DisplayName("플레이어 수만큼 생성하고, 시작 순서대로 일꾼 1·2개 + 은화 1개를 준다")
+    @DisplayName("플레이어 수만큼 생성하고, 시작 순서대로 일꾼 1·2개 + 은화 1개를 주며 성은 가운데 19번 칸에 놓는다")
     void setsUpPlayersWithOrderedWorkersAndSilver() {
         RecordingGameUi ui = new RecordingGameUi();
-        // 플레이어 수 → (이름, 성 칸) × 2
-        ui.scriptLines("2", "Alice", "19", "Bob", "7");
+        // 플레이어 수 → 이름 × 2
+        ui.scriptLines("2", "Alice", "Bob");
 
         Player[] players = PlayerSetup.setupPlayers(ui, new GoodsSupply(1L));
 
@@ -30,15 +30,15 @@ class PlayerSetupTest {
         assertThat(players[1].getWorkers()).isEqualTo(2);
         assertThat(players[1].getSilver()).isEqualTo(1);
         assertThat(players[1].getBoard().getGoods().totalStored()).isEqualTo(3);
-        assertThat(players[1].getBoard().isOccupied(7)).isTrue();
+        assertThat(players[1].getBoard().isOccupied(19)).isTrue();
     }
 
     @Test
     @DisplayName("플레이어 수 입력이 범위를 벗어나면 다시 묻는다")
     void repromptsOnInvalidPlayerCount() {
         RecordingGameUi ui = new RecordingGameUi();
-        // 0, 비숫자 → 거부, 그 다음 1로 진행 (이름, 성 칸)
-        ui.scriptLines("0", "x", "1", "Solo", "19");
+        // 0, 비숫자 → 거부, 그 다음 1로 진행 (이름)
+        ui.scriptLines("0", "x", "1", "Solo");
 
         Player[] players = PlayerSetup.setupPlayers(ui, new GoodsSupply(1L));
 

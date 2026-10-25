@@ -35,24 +35,26 @@ class TurnCentralMarketTest {
     @Test
     @DisplayName("주사위 액션 전에 구매해도 그 주사위로 다시 액션을 고른다")
     void purchaseDoesNotUseDie() {
-        ui.scriptOptionsContaining("중앙 시장[0]", "일꾼 2개 받기", "일꾼 2개 받기");
+        // Dice(1L)은 4, 5를 굴린다 → 주사위 4를 먼저 쓴다
+        ui.scriptOptionsContaining("주사위 4 사용", "중앙 시장[0]", "일꾼 2개 받기", "일꾼 2개 받기");
 
         tm.playerTurn(player, Phase.A);
 
         assertThat(player.getSilver()).isEqualTo(2);
         assertThat(player.getBoard().getStorage().size()).isEqualTo(1);
         assertThat(player.getWorkers()).isEqualTo(4); // 주사위 두 개 모두 일꾼 받기에 썼다
-        assertThat(ui.chooseCalls).isEqualTo(3);
+        assertThat(ui.chooseCalls).isEqualTo(4); // 주사위 고르기 + 구매 + 액션 2
     }
 
     @Test
     @DisplayName("한 턴에 두 번은 살 수 없다")
     void purchaseOncePerTurn() {
-        ui.scriptOptionsContaining("중앙 시장[0]", "일꾼 2개 받기", "일꾼 2개 받기");
+        // Dice(1L)은 4, 5를 굴린다 → 주사위 4를 먼저 쓴다
+        ui.scriptOptionsContaining("주사위 4 사용", "중앙 시장[0]", "일꾼 2개 받기", "일꾼 2개 받기");
 
         tm.playerTurn(player, Phase.A);
 
-        List<List<String>> afterPurchase = ui.menus.subList(1, ui.menus.size());
+        List<List<String>> afterPurchase = ui.menus.subList(2, ui.menus.size());
         assertThat(afterPurchase).allSatisfy(menu ->
                 assertThat(menu).noneMatch(option -> option.contains("중앙 시장")));
         assertThat(ui.messaged("[턴 종료 전]")).isFalse();
@@ -61,12 +63,12 @@ class TurnCentralMarketTest {
     @Test
     @DisplayName("주사위를 다 쓴 뒤에도 사지 않았다면 턴 종료 전에 한 번 살 수 있다")
     void purchaseAfterDice() {
-        ui.scriptOptionsContaining("일꾼 2개 받기", "일꾼 2개 받기", "중앙 시장[0]");
+        ui.scriptOptionsContaining("주사위 4 사용", "일꾼 2개 받기", "일꾼 2개 받기", "중앙 시장[0]");
 
         tm.playerTurn(player, Phase.A);
 
         assertThat(ui.messaged("[턴 종료 전]")).isTrue();
-        assertThat(ui.menus.get(2).get(0)).isEqualTo("구매하지 않고 턴 종료");
+        assertThat(ui.menus.get(ui.menus.size() - 1).get(0)).isEqualTo("구매하지 않고 턴 종료");
         assertThat(player.getSilver()).isEqualTo(2);
         assertThat(player.getBoard().getStorage().size()).isEqualTo(1);
     }
@@ -74,11 +76,25 @@ class TurnCentralMarketTest {
     @Test
     @DisplayName("턴 종료 전 구매를 건너뛸 수 있다")
     void skipPurchaseAfterDice() {
-        ui.scriptOptionsContaining("일꾼 2개 받기", "일꾼 2개 받기", "구매하지 않고 턴 종료");
+        ui.scriptOptionsContaining("주사위 4 사용", "일꾼 2개 받기", "일꾼 2개 받기", "구매하지 않고 턴 종료");
 
         tm.playerTurn(player, Phase.A);
 
         assertThat(player.getSilver()).isEqualTo(4);
         assertThat(player.getBoard().getStorage().isEmpty()).isTrue();
+    }
+
+    @Test
+    @DisplayName("두 주사위 중 원하는 것을 먼저 쓸 수 있다")
+    void chooseDieOrder() {
+        // Dice(1L)은 4, 5를 굴린다 → 5를 먼저 쓴다
+        ui.scriptOptionsContaining("주사위 5 사용", "일꾼 2개 받기", "일꾼 2개 받기", "구매하지 않고 턴 종료");
+
+        tm.playerTurn(player, Phase.A);
+
+        assertThat(ui.menus.get(0)).containsExactly("주사위 4 사용", "주사위 5 사용");
+        assertThat(ui.messaged("[1번째 행동: 주사위 5]")).isTrue();
+        assertThat(ui.messaged("[2번째 행동: 주사위 4]")).isTrue();
+        assertThat(player.getWorkers()).isEqualTo(4);
     }
 }

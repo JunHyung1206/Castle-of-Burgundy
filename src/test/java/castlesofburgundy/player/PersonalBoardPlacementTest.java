@@ -98,4 +98,15 @@ class PersonalBoardPlacementTest {
         assertThat(board.getStorage().isFull()).isTrue();
         assertThrows(IllegalStateException.class, () -> board.getStorage().add(BaseTile.of(TileType.CASTLE, 4)));
     }
+
+    @Test
+    @DisplayName("시작 성은 영지 가운데 19번 칸에 놓인다")
+    void startingCastleIsCell19() {
+        PersonalBoard fresh = new PersonalBoard(new PersonalLayout());
+
+        fresh.setupStartingCastle();
+
+        assertThat(fresh.getPlacedTile(19)).map(Tile::type).contains(TileType.CASTLE);
+        assertThat(fresh.getLayout().get(19).die()).isEqualTo(6);
+    }
 }

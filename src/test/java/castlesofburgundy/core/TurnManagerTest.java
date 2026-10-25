@@ -28,7 +28,7 @@ class TurnManagerTest {
     private GameContext simpleContext(long diceSeed) {
         TileSupplier supplier = new TileSupplier(1L);
         GameBoard board = new GameBoard();
-        board.refillDepots(supplier::draw);
+        board.refillDepots(4, supplier::draw);
         return new GameContext(1L, board, supplier, new Dice(diceSeed), new castlesofburgundy.goods.GoodsSupply(1L));
     }
 

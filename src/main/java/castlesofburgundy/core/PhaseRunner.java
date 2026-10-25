@@ -85,7 +85,7 @@ public class PhaseRunner {
      */
     void endPhase(Player[] players) {
         for (Player player : players) {
-            int mines = player.countPlacedOfType(TileType.MINE);
+            int mines = player.getBoard().countPlacedOfType(TileType.MINE);
             if (mines > 0) {
                 player.addSilver(mines);
                 ui.message(player.getName() + ": 광산 " + mines + "개 → 은화 +" + mines);

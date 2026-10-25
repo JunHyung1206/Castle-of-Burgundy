@@ -1,13 +1,22 @@
 package castlesofburgundy.player;
 
+import castlesofburgundy.goods.GoodsStorage;
 import castlesofburgundy.tile.*;
 
 import java.util.*;
 
-
+/**
+ * 개인 보드 판 위에 인쇄된 것 전부: 영지(37칸), 타일 저장소(3칸), 상품 저장소(3색).
+ * 저장소와 상품 저장소는 각자 자기 규칙을 지키므로 그대로 내주고,
+ * 저장소 → 영지처럼 부품 사이를 오가는 동작만 보드가 맡는다.
+ */
 public final class PersonalBoard {
+    private static final int STORAGE_CAPACITY = 3;
+
     private final PersonalLayout layout;
     private final Map<Integer, Tile> placed = new HashMap<>(); // cellId→tile
+    private final Storage storage = new Storage(STORAGE_CAPACITY);
+    private final GoodsStorage goods = new GoodsStorage();
 
     public PersonalBoard(PersonalLayout layout) {
         this.layout = Objects.requireNonNull(layout);
@@ -82,6 +91,16 @@ public final class PersonalBoard {
         placed.put(cellId, tile);
     }
 
+    /**
+     * 저장소의 타일을 영지에 놓는다. 배치가 불가능하면 예외를 던지고 저장소는 그대로 둔다.
+     */
+    public Tile placeFromStorage(int storageIndex, int cellId, int dieUsed) {
+        Tile tile = storage.get(storageIndex);
+        place(cellId, tile, dieUsed);
+        storage.removeAt(storageIndex);
+        return tile;
+    }
+
     public Set<Integer> legalPlacements(Tile tile, int dieUsed) {
         if (tile == null) return Set.of();
         Set<Integer> out = new LinkedHashSet<>();
@@ -90,8 +109,6 @@ public final class PersonalBoard {
         }
         return out;
     }
-
-    // PersonalBoard.java 안에 추가
 
     /**
      * startCellId가 속한 "같은 타입의 연결된 구역" 전체를 반환.
@@ -181,6 +198,14 @@ public final class PersonalBoard {
 
     public PersonalLayout getLayout() {
         return layout;
+    }
+
+    public Storage getStorage() {
+        return storage;
+    }
+
+    public GoodsStorage getGoods() {
+        return goods;
     }
 
 }

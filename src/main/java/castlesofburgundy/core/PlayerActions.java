@@ -24,7 +24,7 @@ public final class PlayerActions {
         BoardSlot slot = new BoardSlot(dieValue, slotIndex);
         Tile tile = boardState.removeAt(slot).orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot));
 
-        player.addToStorage(tile);
+        player.getBoard().getStorage().add(tile);
     }
 
     public static Tile replaceTileFromBoard(GameContext ctx, Player player, int dieValue, int slotIndex, int storageIndexToDiscard) {
@@ -40,13 +40,13 @@ public final class PlayerActions {
         Tile tile = ctx.boardState().removeAt(slot)
                 .orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot));
 
-        Tile discarded = player.getStorage().removeAt(storageIndexToDiscard);
-        player.addToStorage(tile);
+        Tile discarded = player.getBoard().getStorage().removeAt(storageIndexToDiscard);
+        player.getBoard().getStorage().add(tile);
         return discarded;
     }
 
     public static void buyTileFromCentralMarket(GameContext ctx, Player player, int marketIndex) {
-        if (player.isStorageFull()) {
+        if (player.getBoard().getStorage().isFull()) {
             throw new IllegalStateException("저장소 가득참: 먼저 버려야 함");
         }
 
@@ -54,7 +54,7 @@ public final class PlayerActions {
         player.spendSilver(CENTRAL_MARKET_COST);
         Tile tile = ctx.boardState().removeCentralMarketAt(marketIndex)
                 .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
-        player.addToStorage(tile);
+        player.getBoard().getStorage().add(tile);
     }
 
     public static Tile replaceTileFromCentralMarket(GameContext ctx, Player player, int marketIndex, int storageIndexToDiscard) {
@@ -64,8 +64,8 @@ public final class PlayerActions {
         player.spendSilver(CENTRAL_MARKET_COST);
         Tile tile = ctx.boardState().removeCentralMarketAt(marketIndex)
                 .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
-        Tile discarded = player.getStorage().removeAt(storageIndexToDiscard);
-        player.addToStorage(tile);
+        Tile discarded = player.getBoard().getStorage().removeAt(storageIndexToDiscard);
+        player.getBoard().getStorage().add(tile);
         return discarded;
     }
 
@@ -75,7 +75,7 @@ public final class PlayerActions {
     }
 
     private static void requireStorageIndex(Player player, int storageIndex) {
-        int storageSize = player.storedTiles().size();
+        int storageSize = player.getBoard().getStorage().size();
         if (storageIndex < 0 || storageIndex >= storageSize) {
             throw new IndexOutOfBoundsException("index=" + storageIndex);
         }
@@ -95,10 +95,10 @@ public final class PlayerActions {
             Phase phase
     ) {
         // 배치(실제 보드에 놓기) — 놓인 타일을 그대로 돌려받는다
-        Tile tile = player.placeTileFromStorage(storageId, cellId, dieUsed);
+        Tile tile = player.getBoard().placeFromStorage(storageId, cellId, dieUsed);
 
         // 1) 구역 완성 점수
-        int regionSize = player.completedRegionSizeIfAny(cellId);
+        int regionSize = player.getBoard().completedRegionSizeIfAny(cellId);
         int regionScore = 0;
         if (regionSize > 0) {
             regionScore = phaseBonus(phase) + regionSizeBonus(regionSize);
@@ -135,7 +135,7 @@ public final class PlayerActions {
      * @return 판매한 타일 수(0이면 그 색 상품이 없어 아무 일도 안 일어남)
      */
     public static int sellGoods(Player player, GoodsColor color, int playerCount) {
-        int sold = player.goods().sell(color);
+        int sold = player.getBoard().getGoods().sell(color);
         if (sold > 0) {
             player.addSilver(1);
             player.addScore(sold * playerCount);

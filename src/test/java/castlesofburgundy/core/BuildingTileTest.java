@@ -19,12 +19,12 @@ class BuildingTileTest {
     void setUp() {
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(19);
-        player = new Player(board, 3, "P1");
+        player = new Player(board, "P1");
     }
 
     /** cell 26(BUILDING/die3)은 성(19)과 인접하고, 도시 {26,27,32,33,37}이라 단독 배치로는 구역이 완성되지 않는다. */
     private void placeBuildingAt26(BuildingKind kind) {
-        player.addToStorage(new BuildingTile(0, kind));
+        player.getBoard().getStorage().add(new BuildingTile(0, kind));
         PlayerActions.placeTileFromStorage(player, 0, 26, 3, Phase.A);
     }
 

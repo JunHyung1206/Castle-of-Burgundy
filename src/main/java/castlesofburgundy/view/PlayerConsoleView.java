@@ -55,7 +55,7 @@ public final class PlayerConsoleView {
         if (COLORIZE) sb.append(AsciiUtils.FG_GRAY).append("(색상=타입 배경)").append(AsciiUtils.RESET);
         sb.append("\n\n");
 
-        String s = storageView(player.getStorage());
+        String s = storageView(board.getStorage());
         sb.append(s);
 
         sb.append("\n일꾼 수: ").append(player.getWorkers())

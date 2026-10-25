@@ -35,7 +35,7 @@ class TurnManagerCastleTest {
 
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(19);
-        player = new Player(board, 3, "P1");
+        player = new Player(board, "P1");
     }
 
     @Test
@@ -54,7 +54,7 @@ class TurnManagerCastleTest {
     @DisplayName("성 추가 행동에서 저장소 타일을 골라 영지에 배치한다")
     void castleExtraAction_placesTile() {
         // cell 13(KNOWLEDGE/die1)은 시작 성과 인접 → die 1 루프에서 배치 옵션이 생긴다
-        player.addToStorage(BaseTile.of(TileType.KNOWLEDGE, 100));
+        player.getBoard().getStorage().add(BaseTile.of(TileType.KNOWLEDGE, 100));
         ui.scriptChoices(0); // 첫 옵션 선택
         TurnManager tm = new TurnManager(ctx, ui);
 
@@ -63,7 +63,7 @@ class TurnManagerCastleTest {
         assertThat(ui.messaged("추가로 한 번 더 행동할 수 있습니다")).isTrue();
         assertThat(ui.chooseCalls).isEqualTo(1);
         assertThat(player.getBoard().isOccupied(13)).isTrue();
-        assertThat(player.isStorageEmpty()).isTrue();
+        assertThat(player.getBoard().getStorage().isEmpty()).isTrue();
     }
 
     @Test
@@ -74,7 +74,7 @@ class TurnManagerCastleTest {
         board.place(13, BaseTile.of(TileType.KNOWLEDGE, 1), 1);
         board.place(8, BaseTile.of(TileType.KNOWLEDGE, 2), 5);
         // 마지막 한 칸(4/die3)은 TurnManager 액션으로 채워 서술까지 확인
-        player.addToStorage(BaseTile.of(TileType.KNOWLEDGE, 3));
+        player.getBoard().getStorage().add(BaseTile.of(TileType.KNOWLEDGE, 3));
 
         TurnManager tm = new TurnManager(ctx, ui);
         TurnManager.Action place4 = tm.buildOptionsForDie(player, 3, Phase.A).stream()

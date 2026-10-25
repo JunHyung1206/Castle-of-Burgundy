@@ -121,17 +121,17 @@ public final class TurnManager {
                                             String prefix,
                                             Phase phase,
                                             List<Action> actions) {
-        if (player.isStorageEmpty()) {
+        if (player.getBoard().getStorage().isEmpty()) {
             return;
         }
 
-        List<Tile> stored = player.storedTiles();
+        List<Tile> stored = player.getBoard().getStorage().view();
 
         for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
             Tile t = stored.get(storageIndex);
             int sIdx = storageIndex;
 
-            for (int cellId : player.legalPlacements(t, adjustedDie)) {
+            for (int cellId : player.getBoard().legalPlacements(t, adjustedDie)) {
                 String desc = prefix + "저장소[" + sIdx + "]의 " + t.type() + " 를 cell " + cellId + " 에 배치";
 
                 actions.add(new Action(desc, () -> {
@@ -167,7 +167,7 @@ public final class TurnManager {
         for (int marketIndex = 0; marketIndex < centralMarket.size(); marketIndex++) {
             int mIdx = marketIndex;
             Tile tile = centralMarket.get(marketIndex);
-            if (!player.isStorageFull()) {
+            if (!player.getBoard().getStorage().isFull()) {
                 String desc = "은화 2개로 중앙 시장[" + marketIndex + "]의 "
                         + tile.type() + " 구매";
                 actions.add(new Action(desc, () -> {
@@ -177,7 +177,7 @@ public final class TurnManager {
                 continue;
             }
 
-            List<Tile> stored = player.storedTiles();
+            List<Tile> stored = player.getBoard().getStorage().view();
             for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
                 int discardIndex = storageIndex;
                 Tile discarded = stored.get(storageIndex);
@@ -225,14 +225,14 @@ public final class TurnManager {
                 continue;
             }
 
-            if (!player.isStorageFull()) {
+            if (!player.getBoard().getStorage().isFull()) {
                 options.add(label + " 섹션 " + slot.sectionId() + " 슬롯 " + slot.index()
                         + "에서 타일 " + tile.type() + " 가져오기");
                 effects.add(() -> PlayerActions.takeTileFromBoard(ctx, player, slot.sectionId(), slot.index()));
                 continue;
             }
 
-            List<Tile> stored = player.storedTiles();
+            List<Tile> stored = player.getBoard().getStorage().view();
             for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
                 int discardIndex = storageIndex;
                 Tile discarded = stored.get(storageIndex);
@@ -265,7 +265,7 @@ public final class TurnManager {
         List<GoodsColor> colors = new ArrayList<>();
 
         for (GoodsColor color : GoodsColor.values()) {
-            int count = player.goods().count(color);
+            int count = player.getBoard().getGoods().count(color);
             if (count > 0) {
                 colors.add(color);
                 options.add(color + " 상품 판매 (" + count + "개)");
@@ -289,7 +289,7 @@ public final class TurnManager {
                                  String prefix,
                                  List<Action> actions) {
         GoodsColor color = GoodsColor.forDie(adjustedDie);
-        int count = player.goods().count(color);
+        int count = player.getBoard().getGoods().count(color);
         if (count == 0) {
             return;
         }
@@ -326,7 +326,7 @@ public final class TurnManager {
         int stored = 0;
         int dropped = 0;
         for (GoodsColor color : taken) {
-            if (player.addGoods(color)) {
+            if (player.getBoard().getGoods().add(color)) {
                 stored++;
             } else {
                 dropped++;
@@ -363,7 +363,7 @@ public final class TurnManager {
             }
 
             int sIdx = slotIndex;
-            if (!player.isStorageFull()) {
+            if (!player.getBoard().getStorage().isFull()) {
                 String desc = prefix + "섹션 " + adjustedDie + " 슬롯 " + slotIndex
                         + "에서 타일 " + tile.type() + " 가져오기";
                 actions.add(new Action(desc, () -> {
@@ -374,7 +374,7 @@ public final class TurnManager {
                 continue;
             }
 
-            List<Tile> stored = player.storedTiles();
+            List<Tile> stored = player.getBoard().getStorage().view();
             for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
                 int discardIndex = storageIndex;
                 Tile discarded = stored.get(storageIndex);
@@ -419,7 +419,7 @@ public final class TurnManager {
     }
 
     private String storageSummary(Player player) {
-        List<Tile> stored = player.storedTiles();
+        List<Tile> stored = player.getBoard().getStorage().view();
         if (stored.isEmpty()) {
             return "(empty)";
         }
@@ -442,7 +442,7 @@ public final class TurnManager {
     private String goodsSummary(Player player) {
         List<String> parts = new ArrayList<>();
         for (GoodsColor color : GoodsColor.values()) {
-            int count = player.goods().count(color);
+            int count = player.getBoard().getGoods().count(color);
             if (count > 0) {
                 parts.add(color + "=" + count);
             }
@@ -454,7 +454,7 @@ public final class TurnManager {
         List<String> parts = new ArrayList<>();
         for (DieSetting setting : dieSettings(baseDie, player.getWorkers())) {
             GoodsColor color = GoodsColor.forDie(setting.adjustedDie());
-            int count = player.goods().count(color);
+            int count = player.getBoard().getGoods().count(color);
             if (count > 0) {
                 parts.add(setting.label() + " 주사위 " + setting.adjustedDie()
                         + " -> " + color + " " + count + "개 판매 가능"
@@ -465,12 +465,12 @@ public final class TurnManager {
     }
 
     private String animalScoreCandidatesSummary(Player player, int baseDie) {
-        if (player.isStorageEmpty()) {
+        if (player.getBoard().getStorage().isEmpty()) {
             return "(없음)";
         }
 
         List<String> parts = new ArrayList<>();
-        List<Tile> stored = player.storedTiles();
+        List<Tile> stored = player.getBoard().getStorage().view();
         for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
             Tile tile = stored.get(storageIndex);
             if (!(tile instanceof AnimalTile animal)) {
@@ -478,7 +478,7 @@ public final class TurnManager {
             }
 
             for (DieSetting setting : dieSettings(baseDie, player.getWorkers())) {
-                for (int cellId : player.legalPlacements(animal, setting.adjustedDie())) {
+                for (int cellId : player.getBoard().legalPlacements(animal, setting.adjustedDie())) {
                     int score = animalScoreIfPlaced(player, animal, cellId);
                     parts.add(setting.label() + " 주사위 " + setting.adjustedDie()
                             + " -> 저장소[" + storageIndex + "] "

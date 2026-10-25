@@ -37,7 +37,7 @@ class TurnManagerTest {
     private Player newPlayer() {
         PersonalBoard pb = new PersonalBoard(new PersonalLayout());
         pb.setupInitialCastle(19);
-        return new Player(pb, 3, "P1");
+        return new Player(pb, "P1");
     }
 
     @Test
@@ -64,10 +64,10 @@ class TurnManagerTest {
         Player p = newPlayer();
 
         // 저장소 가득 채우기
-        p.addToStorage(BaseTile.of(TileType.ANIMAL, 1));
-        p.addToStorage(BaseTile.of(TileType.ANIMAL, 2));
-        p.addToStorage(BaseTile.of(TileType.ANIMAL, 3));
-        assertThat(p.getStorage().isFull()).isTrue();
+        p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 1));
+        p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 2));
+        p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 3));
+        assertThat(p.getBoard().getStorage().isFull()).isTrue();
 
         List<TurnManager.Action> options = tm.buildOptionsForDie(p, 1, Phase.A);
 
@@ -82,7 +82,7 @@ class TurnManagerTest {
 
         replaceAction.apply().getAsBoolean();
 
-        assertThat(p.getStorage().size()).isEqualTo(3);
+        assertThat(p.getBoard().getStorage().size()).isEqualTo(3);
         assertThat(ctx.boardState().hasTile(new castlesofburgundy.board.BoardSlot(1, 0))).isFalse();
     }
 
@@ -96,7 +96,7 @@ class TurnManagerTest {
         // 플레이어 보드에서, 예를 들어 13번 칸은 KNOWLEDGE / die=1 (지금 레이아웃에 맞게 수정)
         // 그 칸에 맞는 타일을 저장소에 넣기
         Tile t = BaseTile.of(TileType.KNOWLEDGE, 100);
-        p.addToStorage(t);
+        p.getBoard().getStorage().add(t);
 
         int die = 1; // 13번 칸이 die=1이라고 가정
 
@@ -140,8 +140,8 @@ class TurnManagerTest {
         ui.scriptChoices(0, 0);
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player p = newPlayer();
-        p.addToStorage(BaseTile.of(TileType.SHIP, 100));
-        p.addGoods(GoodsColor.RED);
+        p.getBoard().getStorage().add(BaseTile.of(TileType.SHIP, 100));
+        p.getBoard().getGoods().add(GoodsColor.RED);
 
         tm.playerTurn(p, Phase.A);
 
@@ -159,7 +159,7 @@ class TurnManagerTest {
         ui.scriptChoices(0, 0);
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player p = newPlayer();
-        p.addGoods(GoodsColor.TEAL);
+        p.getBoard().getGoods().add(GoodsColor.TEAL);
 
         tm.playerTurn(p, Phase.A);
 
@@ -178,8 +178,8 @@ class TurnManagerTest {
 
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(2);
-        Player p = new Player(board, 3, "P1");
-        p.addToStorage(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
+        Player p = new Player(board, "P1");
+        p.getBoard().getStorage().add(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
 
         tm.playerTurn(p, Phase.A);
 

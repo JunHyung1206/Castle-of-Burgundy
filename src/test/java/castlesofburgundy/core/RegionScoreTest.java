@@ -27,7 +27,7 @@ class RegionScoreTest {
         layout = new PersonalLayout();
         board = new PersonalBoard(layout);
         board.setupInitialCastle(19); // 시작 성
-        player = new Player(board, 3, "P1");
+        player = new Player(board, "P1");
     }
 
 
@@ -52,7 +52,7 @@ class RegionScoreTest {
             int die = cell.die();
 
             // 배치할 타일을 저장소에 넣고
-            player.addToStorage(BaseTile.of(type, cellId));
+            player.getBoard().getStorage().add(BaseTile.of(type, cellId));
 
             // 페이즈 A 라고 가정, workerUsed는 0
             PlayerActions.placeTileFromStorage(player, 0, cellId, die, Phase.A);
@@ -81,7 +81,7 @@ class RegionScoreTest {
 
         for (int cellId : region) {
             PersonalCell cell = layout.get(cellId);
-            player.addToStorage(BaseTile.of(cell.type(), cellId));
+            player.getBoard().getStorage().add(BaseTile.of(cell.type(), cellId));
             PlayerActions.placeTileFromStorage(player, 0, cellId, cell.die(), Phase.B);
         }
 
@@ -99,7 +99,7 @@ class RegionScoreTest {
 
         int beforeScore = player.getScore();
         for (int[] cd : cellAndDie) {
-            player.addToStorage(BaseTile.of(TileType.BUILDING, cd[0]));
+            player.getBoard().getStorage().add(BaseTile.of(TileType.BUILDING, cd[0]));
             PlayerActions.placeTileFromStorage(player, 0, cd[0], cd[1], Phase.A);
         }
 

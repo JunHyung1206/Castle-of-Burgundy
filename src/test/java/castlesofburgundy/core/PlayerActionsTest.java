@@ -28,7 +28,7 @@ class PlayerActionsTest {
     private Player newPlayer() {
         PersonalBoard pb = new PersonalBoard(new PersonalLayout());
         pb.setupInitialCastle(19);
-        return new Player(pb, 3, "p");
+        return new Player(pb, "p");
     }
 
     @Test
@@ -39,15 +39,15 @@ class PlayerActionsTest {
 
         BoardSlot slot = new BoardSlot(1, 0);
         assertThat(ctx.boardState().hasTile(slot)).isTrue();
-        int beforeSize = p.getStorage().size();
+        int beforeSize = p.getBoard().getStorage().size();
         Tile expectedTile = ctx.boardState().get(slot).get();
 
         PlayerActions.takeTileFromBoard(ctx, p, 1, 0);
 
-        assertThat(p.getStorage().size()).isEqualTo(beforeSize + 1); // 개인 보드의 저장소에 한개 추가된다.
+        assertThat(p.getBoard().getStorage().size()).isEqualTo(beforeSize + 1); // 개인 보드의 저장소에 한개 추가된다.
         assertThat(ctx.boardState().hasTile(slot)).isFalse();  // 가져온 후 공용보드에는 타일이 없다.
 
-        assertThat(p.getStorage().view().get(0)).isEqualTo(expectedTile);
+        assertThat(p.getBoard().getStorage().view().get(0)).isEqualTo(expectedTile);
     }
 
     @Test
@@ -60,10 +60,10 @@ class PlayerActionsTest {
         Tile keep1 = BaseTile.of(TileType.ANIMAL, 1);
         Tile discarded = BaseTile.of(TileType.ANIMAL, 2);
         Tile keep2 = BaseTile.of(TileType.ANIMAL, 3);
-        p.addToStorage(keep1);
-        p.addToStorage(discarded);
-        p.addToStorage(keep2);
-        assertThat(p.getStorage().isFull()).isTrue();
+        p.getBoard().getStorage().add(keep1);
+        p.getBoard().getStorage().add(discarded);
+        p.getBoard().getStorage().add(keep2);
+        assertThat(p.getBoard().getStorage().isFull()).isTrue();
 
         BoardSlot slot = new BoardSlot(1, 0);
         Tile expectedTile = ctx.boardState().get(slot).get();
@@ -72,7 +72,7 @@ class PlayerActionsTest {
 
         assertThat(actualDiscarded).isEqualTo(discarded);
         assertThat(ctx.boardState().hasTile(slot)).isFalse();
-        assertThat(p.getStorage().view()).containsExactly(keep1, keep2, expectedTile);
+        assertThat(p.getBoard().getStorage().view()).containsExactly(keep1, keep2, expectedTile);
     }
 
     @Test
@@ -90,7 +90,7 @@ class PlayerActionsTest {
         assertThat(p.getSilver()).isZero();
         assertThat(ctx.boardState().centralMarket()).hasSize(7);
         assertThat(ctx.boardState().centralMarket()).doesNotContain(expectedTile);
-        assertThat(p.getStorage().view()).containsExactly(expectedTile);
+        assertThat(p.getBoard().getStorage().view()).containsExactly(expectedTile);
     }
 
     @Test
@@ -104,9 +104,9 @@ class PlayerActionsTest {
         Tile keep1 = BaseTile.of(TileType.ANIMAL, 1);
         Tile discarded = BaseTile.of(TileType.ANIMAL, 2);
         Tile keep2 = BaseTile.of(TileType.ANIMAL, 3);
-        p.addToStorage(keep1);
-        p.addToStorage(discarded);
-        p.addToStorage(keep2);
+        p.getBoard().getStorage().add(keep1);
+        p.getBoard().getStorage().add(discarded);
+        p.getBoard().getStorage().add(keep2);
 
         Tile expectedTile = ctx.boardState().centralMarket().get(0);
 
@@ -115,7 +115,7 @@ class PlayerActionsTest {
         assertThat(actualDiscarded).isEqualTo(discarded);
         assertThat(p.getSilver()).isZero();
         assertThat(ctx.boardState().centralMarket()).hasSize(7);
-        assertThat(p.getStorage().view()).containsExactly(keep1, keep2, expectedTile);
+        assertThat(p.getBoard().getStorage().view()).containsExactly(keep1, keep2, expectedTile);
     }
 
     @Test
@@ -123,8 +123,8 @@ class PlayerActionsTest {
     void placeCastleGrantsExtraAction() {
         PersonalBoard pb = new PersonalBoard(new PersonalLayout());
         pb.setupInitialCastle(7); // 성 군집 {2,3,7}의 7번에서 시작
-        Player p = new Player(pb, 3, "p");
-        p.addToStorage(new CastleTile(99));
+        Player p = new Player(pb, "p");
+        p.getBoard().getStorage().add(new CastleTile(99));
 
         // cell 2: CASTLE / die 5, 7번과 인접
         PlacementOutcome outcome = PlayerActions.placeTileFromStorage(p, 0, 2, 5, Phase.A);
@@ -137,7 +137,7 @@ class PlayerActionsTest {
     @DisplayName("성이 아닌 타일 배치는 추가 행동을 주지 않는다")
     void placeNonCastleNoExtraAction() {
         Player p = newPlayer();
-        p.addToStorage(BaseTile.of(TileType.KNOWLEDGE, 100));
+        p.getBoard().getStorage().add(BaseTile.of(TileType.KNOWLEDGE, 100));
 
         // cell 13: KNOWLEDGE / die 1, 시작 성(19)과 인접
         PlacementOutcome outcome = PlayerActions.placeTileFromStorage(p, 0, 13, 1, Phase.A);
@@ -161,7 +161,7 @@ class PlayerActionsTest {
     }
 
     private PlacementOutcome place(Player p, TileType type, int cellId, int die) {
-        p.addToStorage(BaseTile.of(type, cellId));
+        p.getBoard().getStorage().add(BaseTile.of(type, cellId));
         return PlayerActions.placeTileFromStorage(p, 0, cellId, die, Phase.A);
     }
 
@@ -169,16 +169,16 @@ class PlayerActionsTest {
     @DisplayName("상품 판매: 해당 색 전체를 팔아 은화 1개 + 타일당 플레이어 수만큼 점수")
     void sellGoodsGivesSilverAndScore() {
         Player p = newPlayer();
-        p.addGoods(GoodsColor.RED);
-        p.addGoods(GoodsColor.RED);
-        p.addGoods(GoodsColor.RED);
+        p.getBoard().getGoods().add(GoodsColor.RED);
+        p.getBoard().getGoods().add(GoodsColor.RED);
+        p.getBoard().getGoods().add(GoodsColor.RED);
 
         int sold = PlayerActions.sellGoods(p, GoodsColor.RED, 3);
 
         assertThat(sold).isEqualTo(3);
         assertThat(p.getSilver()).isEqualTo(1);     // 개수와 무관하게 은화 1
         assertThat(p.getScore()).isEqualTo(3 * 3);  // 타일당 3점(3인) × 3개
-        assertThat(p.goods().count(GoodsColor.RED)).isZero();
+        assertThat(p.getBoard().getGoods().count(GoodsColor.RED)).isZero();
     }
 
     @Test

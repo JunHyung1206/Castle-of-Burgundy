@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PersonalBoardPlacementTest {
 
@@ -60,5 +61,41 @@ class PersonalBoardPlacementTest {
     void legalPlacements_onlyAdjacent() {
         // KNOWLEDGE die 1 칸은 13, 36 두 곳이지만 36은 성과 떨어져 있다 → 13만 합법
         assertThat(board.legalPlacements(knowledge, 1)).containsExactly(13);
+    }
+
+    @Test
+    @DisplayName("저장소의 타일을 영지에 놓으면 저장소에서 빠지고 영지에 놓인다")
+    void placeFromStorage_movesTile() {
+        board.getStorage().add(ship);
+        board.getStorage().add(knowledge);
+
+        Tile placed = board.placeFromStorage(1, 13, 1);
+
+        assertThat(placed).isEqualTo(knowledge);
+        assertThat(board.getStorage().view()).containsExactly(ship);
+        assertThat(board.getPlacedTile(13)).contains(knowledge);
+    }
+
+    @Test
+    @DisplayName("배치할 수 없으면 예외가 나고 저장소의 타일은 그대로 남는다")
+    void placeFromStorage_illegalKeepsStorage() {
+        board.getStorage().add(knowledge);
+
+        // 주사위 눈 불일치(cell 13은 die 1)
+        assertThrows(IllegalArgumentException.class, () -> board.placeFromStorage(0, 13, 2));
+
+        assertThat(board.getStorage().view()).containsExactly(knowledge);
+        assertThat(board.isOccupied(13)).isFalse();
+    }
+
+    @Test
+    @DisplayName("개인 보드의 타일 저장소는 3칸이다")
+    void storageCapacityIsThree() {
+        board.getStorage().add(BaseTile.of(TileType.ANIMAL, 1));
+        board.getStorage().add(BaseTile.of(TileType.SHIP, 2));
+        board.getStorage().add(BaseTile.of(TileType.MINE, 3));
+
+        assertThat(board.getStorage().isFull()).isTrue();
+        assertThrows(IllegalStateException.class, () -> board.getStorage().add(BaseTile.of(TileType.CASTLE, 4)));
     }
 }

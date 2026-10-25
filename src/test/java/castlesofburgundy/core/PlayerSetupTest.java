@@ -23,13 +23,13 @@ class PlayerSetupTest {
         assertThat(players[0].getName()).isEqualTo("Alice");
         assertThat(players[0].getWorkers()).isEqualTo(1);
         assertThat(players[0].getSilver()).isEqualTo(1);
-        assertThat(players[0].goods().totalStored()).isEqualTo(3);
+        assertThat(players[0].getBoard().getGoods().totalStored()).isEqualTo(3);
         assertThat(players[0].getBoard().isOccupied(19)).isTrue();
 
         assertThat(players[1].getName()).isEqualTo("Bob");
         assertThat(players[1].getWorkers()).isEqualTo(2);
         assertThat(players[1].getSilver()).isEqualTo(1);
-        assertThat(players[1].goods().totalStored()).isEqualTo(3);
+        assertThat(players[1].getBoard().getGoods().totalStored()).isEqualTo(3);
         assertThat(players[1].getBoard().isOccupied(7)).isTrue();
     }
 

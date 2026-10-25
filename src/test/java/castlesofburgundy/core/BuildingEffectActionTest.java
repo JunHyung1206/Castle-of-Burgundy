@@ -30,7 +30,7 @@ class BuildingEffectActionTest {
     private Player newPlayer() {
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(19);
-        return new Player(board, 3, "P1");
+        return new Player(board, "P1");
     }
 
     @Test
@@ -41,15 +41,15 @@ class BuildingEffectActionTest {
         ui.scriptChoices(0);
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player player = newPlayer();
-        player.addToStorage(new BuildingTile(100, BuildingKind.MARKET));
+        player.getBoard().getStorage().add(new BuildingTile(100, BuildingKind.MARKET));
 
         long before = countBoardTiles(ctx, Set.of(TileType.SHIP, TileType.ANIMAL));
 
         placeBuildingAt26(tm, player).apply().getAsBoolean();
 
         assertThat(countBoardTiles(ctx, Set.of(TileType.SHIP, TileType.ANIMAL))).isEqualTo(before - 1);
-        assertThat(player.storedTiles()).hasSize(1);
-        assertThat(player.storedTiles().get(0).type()).isIn(TileType.SHIP, TileType.ANIMAL);
+        assertThat(player.getBoard().getStorage().view()).hasSize(1);
+        assertThat(player.getBoard().getStorage().view().get(0).type()).isIn(TileType.SHIP, TileType.ANIMAL);
     }
 
     @Test
@@ -60,15 +60,15 @@ class BuildingEffectActionTest {
         ui.scriptChoices(0);
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player player = newPlayer();
-        player.addToStorage(new BuildingTile(100, BuildingKind.CARPENTER));
+        player.getBoard().getStorage().add(new BuildingTile(100, BuildingKind.CARPENTER));
 
         long before = countBoardTiles(ctx, Set.of(TileType.BUILDING));
 
         placeBuildingAt26(tm, player).apply().getAsBoolean();
 
         assertThat(countBoardTiles(ctx, Set.of(TileType.BUILDING))).isEqualTo(before - 1);
-        assertThat(player.storedTiles()).hasSize(1);
-        assertThat(player.storedTiles().get(0).type()).isEqualTo(TileType.BUILDING);
+        assertThat(player.getBoard().getStorage().view()).hasSize(1);
+        assertThat(player.getBoard().getStorage().view().get(0).type()).isEqualTo(TileType.BUILDING);
     }
 
     @Test
@@ -79,7 +79,7 @@ class BuildingEffectActionTest {
         ui.scriptChoices(0);
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player player = newPlayer();
-        player.addToStorage(new BuildingTile(100, BuildingKind.CHURCH));
+        player.getBoard().getStorage().add(new BuildingTile(100, BuildingKind.CHURCH));
 
         Set<TileType> allowed = Set.of(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE);
         long before = countBoardTiles(ctx, allowed);
@@ -87,8 +87,8 @@ class BuildingEffectActionTest {
         placeBuildingAt26(tm, player).apply().getAsBoolean();
 
         assertThat(countBoardTiles(ctx, allowed)).isEqualTo(before - 1);
-        assertThat(player.storedTiles()).hasSize(1);
-        assertThat(player.storedTiles().get(0).type()).isIn(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE);
+        assertThat(player.getBoard().getStorage().view()).hasSize(1);
+        assertThat(player.getBoard().getStorage().view().get(0).type()).isIn(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE);
     }
 
     @Test
@@ -99,13 +99,13 @@ class BuildingEffectActionTest {
         ui.scriptChoices(0);
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player player = newPlayer();
-        player.addGoods(GoodsColor.RED);
-        player.addGoods(GoodsColor.RED);
-        player.addToStorage(new BuildingTile(100, BuildingKind.WAREHOUSE));
+        player.getBoard().getGoods().add(GoodsColor.RED);
+        player.getBoard().getGoods().add(GoodsColor.RED);
+        player.getBoard().getStorage().add(new BuildingTile(100, BuildingKind.WAREHOUSE));
 
         placeBuildingAt26(tm, player).apply().getAsBoolean();
 
-        assertThat(player.goods().count(GoodsColor.RED)).isZero();
+        assertThat(player.getBoard().getGoods().count(GoodsColor.RED)).isZero();
         assertThat(player.getSilver()).isEqualTo(1);
         assertThat(player.getScore()).isEqualTo(4);
     }

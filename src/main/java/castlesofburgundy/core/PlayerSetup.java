@@ -8,7 +8,6 @@ public final class PlayerSetup {
 
     private PlayerSetup() {}
 
-    private static final int STORAGE_CAPACITY = 3;
     private static final int STARTING_GOODS = 3;
 
     public static Player[] setupPlayers(GameUi ui, GoodsSupply goodsSupply) {
@@ -35,10 +34,10 @@ public final class PlayerSetup {
             ui.showPersonalBoard(board);
 
             // 시작 플레이어부터 일꾼 1, 2, 3, 4개 + 은화 1개 + 무작위 상품 3개
-            Player player = new Player(board, STORAGE_CAPACITY, name, i + 1);
+            Player player = new Player(board, name, i + 1);
             player.addSilver(1);
             for (int g = 0; g < STARTING_GOODS; g++) {
-                player.addGoods(goodsSupply.draw());
+                player.getBoard().getGoods().add(goodsSupply.draw());
             }
             players[i] = player;
         }

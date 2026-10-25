@@ -22,13 +22,13 @@ class AnimalTileTest {
         board = new PersonalBoard(new PersonalLayout());
         // 성을 2번에 두면 가축 구역 {1,5,6,10,11}이 성과 인접 연결되어 실제 배치로 테스트 가능
         board.setupInitialCastle(2);
-        player = new Player(board, 3, "P1");
+        player = new Player(board, "P1");
     }
 
     /** 가축 타일을 저장소에 넣고 배치한 뒤, 그 배치로 얻은 점수(직전 대비 증가분)를 돌려준다. */
     private int placeAnimal(AnimalSpecies species, int count, int cellId, int die) {
         int before = player.getScore();
-        player.addToStorage(new AnimalTile(nextTileId++, species, count));
+        player.getBoard().getStorage().add(new AnimalTile(nextTileId++, species, count));
         PlayerActions.placeTileFromStorage(player, 0, cellId, die, Phase.A);
         return player.getScore() - before;
     }

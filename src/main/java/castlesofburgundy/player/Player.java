@@ -1,48 +1,25 @@
 package castlesofburgundy.player;
 
-import castlesofburgundy.goods.GoodsColor;
-import castlesofburgundy.goods.GoodsStorage;
-import castlesofburgundy.tile.Tile;
-import castlesofburgundy.tile.TileType;
-
-import java.util.List;
-import java.util.Set;
-
+/**
+ * 게임 참가자와 그가 판 밖에 두는 자원(일꾼, 은화, 점수).
+ * 판 위의 타일·상품은 PersonalBoard가 맡는다.
+ */
 public final class Player {
     private final PersonalBoard board;
-    private final Storage storage;
-    private final GoodsStorage goods = new GoodsStorage();
     private final String name;
 
     private int workers;
     private int silver = 0;
     private int score = 0;
 
-    public Player(PersonalBoard board, int storageCapacity, String name, int workers) {
+    public Player(PersonalBoard board, String name, int workers) {
         this.board = board;
-        this.storage = new Storage(storageCapacity);
         this.name = name;
         this.workers = workers;
     }
 
-    public Player(PersonalBoard board, int storageCapacity, String name) {
-        this(board, storageCapacity, name, 2);
-    }
-
-    public void addToStorage(Tile tile) {
-        storage.add(tile);
-    }
-
-    public boolean isStorageEmpty() {
-        return storage.isEmpty();
-    }
-
-    public boolean isStorageFull() {
-        return storage.isFull();
-    }
-
-    public List<Tile> storedTiles() {
-        return storage.view();
+    public Player(PersonalBoard board, String name) {
+        this(board, name, 2);
     }
 
     public int spendWorkers(int usedWorkers) {
@@ -54,24 +31,6 @@ public final class Player {
         }
         workers -= usedWorkers;
         return workers;
-    }
-
-    public Tile placeTileFromStorage(int storageId, int cellId, int dieUsed) { // (원래 actionPlaceFirstFromStorage)
-        Tile tile = storage.removeAt(storageId);
-        board.place(cellId, tile, dieUsed);
-        return tile;
-    }
-
-    public Set<Integer> legalPlacements(Tile tile, int dieUsed) {
-        return board.legalPlacements(tile, dieUsed);
-    }
-
-    public int completedRegionSizeIfAny(int cellId) {
-        return board.completedRegionSizeIfAny(cellId);
-    }
-
-    public int countPlacedOfType(TileType type) {
-        return board.countPlacedOfType(type);
     }
 
     public void addScore(int value) {
@@ -97,23 +56,9 @@ public final class Player {
         workers += value;
     }
 
-    /** 상품 한 개 저장 시도. 3색 제한으로 둘 수 없으면 false. */
-    public boolean addGoods(GoodsColor color) {
-        return goods.add(color);
-    }
-
-    public GoodsStorage goods() {
-        return goods;
-    }
-
-    public Storage getStorage() {
-        return storage;
-    }
-
     public PersonalBoard getBoard() {
         return board;
     }
-
 
     public int getWorkers() {
         return workers;

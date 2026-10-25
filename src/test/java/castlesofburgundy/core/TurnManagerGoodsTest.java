@@ -28,7 +28,7 @@ class TurnManagerGoodsTest {
     private Player newPlayer(String name) {
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(19);
-        return new Player(board, 3, name);
+        return new Player(board, name);
     }
 
     @Test
@@ -38,8 +38,8 @@ class TurnManagerGoodsTest {
         RecordingGameUi ui = new RecordingGameUi();
         TurnManager tm = new TurnManager(ctx, ui, 3);
         Player player = newPlayer("P1");
-        player.addGoods(GoodsColor.RED);
-        player.addGoods(GoodsColor.RED);
+        player.getBoard().getGoods().add(GoodsColor.RED);
+        player.getBoard().getGoods().add(GoodsColor.RED);
 
         List<TurnManager.Action> options = tm.buildOptionsForDie(player, 1, Phase.A);
 
@@ -51,7 +51,7 @@ class TurnManagerGoodsTest {
         boolean extraAction = sellRed.apply().getAsBoolean();
 
         assertThat(extraAction).isFalse();
-        assertThat(player.goods().count(GoodsColor.RED)).isZero();
+        assertThat(player.getBoard().getGoods().count(GoodsColor.RED)).isZero();
         assertThat(player.getSilver()).isEqualTo(1);
         assertThat(player.getScore()).isEqualTo(6);
     }
@@ -76,7 +76,7 @@ class TurnManagerGoodsTest {
 
         assertThat(extraAction).isFalse();
         assertThat(player.getSilver()).isZero();
-        assertThat(player.getStorage().size()).isEqualTo(1);
+        assertThat(player.getBoard().getStorage().size()).isEqualTo(1);
         assertThat(ctx.boardState().centralMarket()).hasSize(7);
     }
 
@@ -102,9 +102,9 @@ class TurnManagerGoodsTest {
         TurnManager tm = new TurnManager(ctx, new RecordingGameUi(), 2);
         Player player = newPlayer("P1");
         player.addSilver(2);
-        player.addToStorage(BaseTile.of(TileType.ANIMAL, 1));
-        player.addToStorage(BaseTile.of(TileType.ANIMAL, 2));
-        player.addToStorage(BaseTile.of(TileType.ANIMAL, 3));
+        player.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 1));
+        player.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 2));
+        player.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 3));
 
         TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A).stream()
                 .filter(action -> action.description().contains("저장소[1] 버리고")
@@ -115,7 +115,7 @@ class TurnManagerGoodsTest {
         purchase.apply().getAsBoolean();
 
         assertThat(player.getSilver()).isZero();
-        assertThat(player.getStorage().size()).isEqualTo(3);
+        assertThat(player.getBoard().getStorage().size()).isEqualTo(3);
         assertThat(ctx.boardState().centralMarket()).hasSize(7);
     }
 
@@ -128,7 +128,7 @@ class TurnManagerGoodsTest {
 
         Player p1 = newPlayer("P1");
         Player p2 = newPlayer("P2");
-        p2.addToStorage(BaseTile.of(TileType.SHIP, 100));
+        p2.getBoard().getStorage().add(BaseTile.of(TileType.SHIP, 100));
 
         TurnOrder turnOrder = new TurnOrder(new Player[]{p1, p2});
         RecordingGameUi ui = new RecordingGameUi();
@@ -144,8 +144,8 @@ class TurnManagerGoodsTest {
         placeShip.apply().getAsBoolean();
 
         assertThat(ctx.boardState().goodsAt(2)).isEmpty();
-        assertThat(p2.goods().count(GoodsColor.RED)).isEqualTo(1);
-        assertThat(p2.goods().count(GoodsColor.PINK)).isEqualTo(1);
+        assertThat(p2.getBoard().getGoods().count(GoodsColor.RED)).isEqualTo(1);
+        assertThat(p2.getBoard().getGoods().count(GoodsColor.PINK)).isEqualTo(1);
         assertThat(turnOrder.currentOrder()).containsExactly(p2, p1);
     }
 }

@@ -18,7 +18,7 @@ class PlayerConsoleViewTest {
     @DisplayName("저장소의 동물 타일은 종과 마리 수를 보여준다")
     void storageShowsAnimalSpeciesAndCount() {
         Player player = newPlayer();
-        player.addToStorage(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
+        player.getBoard().getStorage().add(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
 
         String rendered = PlayerConsoleView.render(player);
 
@@ -29,7 +29,7 @@ class PlayerConsoleViewTest {
     @DisplayName("개인판에 놓인 동물 타일은 칸 안에 종과 마리 수를 축약해서 보여준다")
     void boardShowsPlacedAnimalSpeciesAndCount() {
         Player player = newPlayer();
-        player.addToStorage(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
+        player.getBoard().getStorage().add(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
         PlayerActions.placeTileFromStorage(player, 0, 1, 6, Phase.A);
 
         String rendered = PlayerConsoleView.render(player);
@@ -40,6 +40,6 @@ class PlayerConsoleViewTest {
     private Player newPlayer() {
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(2);
-        return new Player(board, 3, "P1");
+        return new Player(board, "P1");
     }
 }

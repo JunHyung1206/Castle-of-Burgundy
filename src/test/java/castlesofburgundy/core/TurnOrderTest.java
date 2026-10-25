@@ -13,7 +13,7 @@ class TurnOrderTest {
     private Player newPlayer(String name) {
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(19);
-        return new Player(board, 3, name);
+        return new Player(board, name);
     }
 
     @Test

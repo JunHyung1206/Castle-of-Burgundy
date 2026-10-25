@@ -38,7 +38,7 @@ class PhaseEndTest {
         // 광산 {25, 30}을 성(19)에서부터 연결해 배치
         board.place(25, BaseTile.of(TileType.MINE, 1), 4);
         board.place(30, BaseTile.of(TileType.MINE, 2), 1);
-        Player player = new Player(board, 3, "P1");
+        Player player = new Player(board, "P1");
 
         assertThat(player.getSilver()).isZero();
 
@@ -52,7 +52,7 @@ class PhaseEndTest {
     void noMinesNoSilver() {
         PersonalBoard board = new PersonalBoard(new PersonalLayout());
         board.setupInitialCastle(19);
-        Player player = new Player(board, 3, "P1");
+        Player player = new Player(board, "P1");
 
         phaseRunner.endPhase(new Player[]{player});
 

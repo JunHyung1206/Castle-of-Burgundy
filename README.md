@@ -142,16 +142,16 @@ castlesofburgundy
   │
   ├─ goods                         # 교역 상품
   │  ├─ GoodsColor.java            # 상품 6색과 주사위 눈 매핑
-  │  ├─ GoodsStorage.java          # 플레이어 상품 저장/판매 더미
+  │  ├─ GoodsStorage.java          # 개인 보드의 상품 저장/판매 더미
   │  └─ GoodsSupply.java           # 상품 무작위 공급
   │
   ├─ player                        # 개인 보드 / 저장소 / 플레이어
   │  ├─ PersonalLayout.java        # 개인 보드의 정적 배치(37칸, 타입/주사위 눈 정보)
   │  ├─ PersonalCell.java          # 개인 보드의 칸 정보(id, type, die)
   │  ├─ PersonalGrid.java          # 헥스 맵 인접 정보(이웃 cell 계산)
-  │  ├─ PersonalBoard.java         # 타일 배치, 합법 배치 검사, 구역 완성 체크
+  │  ├─ PersonalBoard.java         # 영지·타일 저장소·상품 저장소를 가진 개인 보드, 합법 배치 검사, 구역 완성 체크
   │  ├─ Storage.java               # 3칸짜리 개인 저장소
-  │  └─ Player.java                # 점수, 일꾼, 은화, 상품, 보드/저장소를 가진 플레이어
+  │  └─ Player.java                # 이름, 일꾼, 은화, 점수와 개인 보드를 가진 플레이어
   │
   ├─ tile                          # 타일 종류
   │  ├─ Tile.java                  # 공통 인터페이스(type, id, onPlaced 효과)
@@ -284,7 +284,7 @@ castlesofburgundy
 
 #### 상품 저장소를 구현한다.
 - 상품은 6색(`GoodsColor`)으로 구성되며, 주사위 눈 1~6과 대응한다.
-- 플레이어는 상품 저장소(`GoodsStorage`)를 가진다.
+- 개인 보드는 상품 저장소(`GoodsStorage`)를 가진다.
 - 저장소에는 최대 3종류의 색을 보관할 수 있고, 같은 색 상품은 겹쳐서 쌓인다.
 - 판매한 상품은 판매 더미로 이동한다.
 

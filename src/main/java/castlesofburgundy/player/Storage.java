@@ -34,11 +34,20 @@ public final class Storage {
         slots.add(tile);
     }
 
+    public Tile get(int index) {
+        requireIndex(index);
+        return slots.get(index);
+    }
+
     public Tile removeAt(int index) {
+        requireIndex(index);
+        return slots.remove(index);
+    }
+
+    private void requireIndex(int index) {
         if ((index < 0) || (index >= slots.size())) {
             throw new IndexOutOfBoundsException("index=" + index);
         }
-        return slots.remove(index);
     }
 
     public List<Tile> view() {

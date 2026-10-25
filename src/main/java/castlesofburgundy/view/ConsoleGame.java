@@ -1,6 +1,5 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.board.Depot;
 import castlesofburgundy.core.Command;
 import castlesofburgundy.core.Decision;
 import castlesofburgundy.core.Game;
@@ -10,54 +9,57 @@ import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.BuildingKind;
 import castlesofburgundy.tile.Tile;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Scanner;
 
 /**
- * 콘솔에서 Game을 진행한다: 지금 기다리는 선택과 가능한 명령을 메뉴로 보여 주고,
- * 고른 명령을 Game에 넘긴 뒤 일어난 일(GameEvent)을 문장으로 출력한다.
+ * 콘솔에서 Game을 진행한다. 이 화면에는 진행 서술과 선택 메뉴만 두고,
+ * 보드와 상세 상태는 StatusFile로 써서 두 번째 터미널에서 보게 한다.
  */
 public final class ConsoleGame {
+    private static final String BACK = "b";
+
     private final Scanner in;
     private final PrintStream out;
+    private final StatusFile statusFile;
+    private boolean statusFileFailed;
 
     // "=> 실행: ..."은 고른 행동이 후속 선택까지 끝난 뒤(ActionCompleted) 출력한다
     private String executedLine;
 
-    public ConsoleGame(Scanner in, PrintStream out) {
+    public ConsoleGame(Scanner in, PrintStream out, Path statusFile) {
         this.in = in;
         this.out = out;
+        this.statusFile = new StatusFile(statusFile);
     }
 
     public void run(long seed) {
         Game game = Game.start(seed, readPlayerNames());
-        for (Player player : game.players()) {
-            out.println("\n--- 개인 보드 초기 상태 (" + player.getName()
-                    + ", 시작 성: " + player.getBoard().getLayout().startingCastleCell() + "번 칸) ---");
-            out.println(PlayerConsoleView.renderBoardOnly(player.getBoard()));
-        }
+        out.println("\n보드와 상세 상태는 " + statusFile.path() + " 에 계속 씁니다. 다른 터미널에서 이렇게 보세요:");
+        out.println("while true; do clear; cat '" + statusFile.path() + "'; sleep 1; done");
         printEvents(game);
 
         while (!game.isOver()) {
+            writeStatus(game);
             Decision decision = game.pending();
-            List<Command> options = game.availableActions();
             printHeader(game, decision);
 
-            List<String> descriptions = new ArrayList<>(options.size());
-            for (Command option : options) {
-                descriptions.add(describe(game, decision, option));
-            }
-            int choice = chooseIndex(descriptions);
-            String line = executedLine(decision, descriptions.get(choice));
+            Command command = choose(CommandMenu.build(game));
+            String line = executedLine(decision, CommandText.describe(game, decision, command));
             if (line != null) {
                 executedLine = line; // 효과의 대상 고르기는 앞서 고른 행동의 줄을 덮지 않는다
             }
 
-            game.apply(options.get(choice));
+            game.apply(command);
             printEvents(game);
         }
+        writeStatus(game);
 
         out.println("\n=== 최종 게임 보드 ===");
         out.println(GameBoardConsoleView.render(game.board()));
@@ -93,21 +95,65 @@ public final class ConsoleGame {
         }
     }
 
-    private int chooseIndex(List<String> options) {
-        for (int i = 0; i < options.size(); i++) {
-            out.println(i + ") " + options.get(i));
-        }
+    /** 단계 메뉴를 따라 내려가 명령 하나를 고른다. 첫 단계가 아니면 b로 한 단계 위로 돌아간다. */
+    private Command choose(List<CommandMenu.Item> top) {
+        Deque<List<CommandMenu.Item>> parents = new ArrayDeque<>();
+        List<CommandMenu.Item> items = top;
         while (true) {
-            out.print("번호 선택(0~" + (options.size() - 1) + "): ");
-            String line = in.nextLine();
+            for (int i = 0; i < items.size(); i++) {
+                out.println(i + ") " + items.get(i).label());
+            }
+            boolean canGoBack = !parents.isEmpty();
+            if (canGoBack) {
+                out.println(BACK + ") 뒤로");
+            }
+
+            Integer choice = readChoice(items.size(), canGoBack);
+            if (choice == null) {
+                items = parents.pop();
+                continue;
+            }
+            switch (items.get(choice)) {
+                case CommandMenu.Leaf leaf -> {
+                    return leaf.command();
+                }
+                case CommandMenu.Group group -> {
+                    parents.push(items);
+                    items = group.items();
+                    out.println("\n[" + group.label() + "]");
+                }
+            }
+        }
+    }
+
+    /** @return 고른 번호, 뒤로면 null */
+    private Integer readChoice(int size, boolean canGoBack) {
+        while (true) {
+            out.print("번호 선택(0~" + (size - 1) + (canGoBack ? ", " + BACK + "=뒤로" : "") + "): ");
+            String line = in.nextLine().trim();
+            if (canGoBack && line.equalsIgnoreCase(BACK)) {
+                return null;
+            }
             try {
                 int v = Integer.parseInt(line);
-                if (v >= 0 && v < options.size()) {
+                if (v >= 0 && v < size) {
                     return v;
                 }
             } catch (NumberFormatException ignored) {
             }
             out.println("잘못된 입력입니다.");
+        }
+    }
+
+    /** 상태 화면은 보조 수단이라, 쓰지 못해도 게임은 계속하고 한 번만 알린다. */
+    private void writeStatus(Game game) {
+        try {
+            statusFile.write(game);
+        } catch (IOException e) {
+            if (!statusFileFailed) {
+                out.println("[알림] 상태 파일을 쓰지 못했습니다: " + e.getMessage());
+                statusFileFailed = true;
+            }
         }
     }
 
@@ -117,21 +163,35 @@ public final class ConsoleGame {
         switch (decision) {
             case Decision.ChooseDie d ->
                     out.println("\n사용할 주사위를 고르세요. (남은 주사위: " + d.remainingDice() + ")");
-            case Decision.ChooseDieAction d -> {
-                out.println("현재 일꾼 수 : " + game.currentPlayer().getWorkers());
-                out.println(TurnContextView.render(game, d.die()));
-            }
+            case Decision.ChooseDieAction d -> out.println(compactStatus(game.currentPlayer()));
             case Decision.ChooseCastleAction c -> out.println("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
             case Decision.OfferCentralMarket o -> out.println("\n[턴 종료 전] 중앙 시장에서 한 번 구매할 수 있습니다.");
-            case Decision.ChooseShipDepot s -> {
-            }
-            case Decision.ChooseBuildingTile b -> {
-            }
-            case Decision.ChooseGoodsToSell g -> {
-            }
+            case Decision.ChooseShipDepot s -> out.println("[배] 상품을 가져올 창고를 고르세요.");
+            case Decision.ChooseBuildingTile b ->
+                    out.println(CommandText.buildingLabel(b.kind()) + " 가져올 타일을 고르세요.");
+            case Decision.ChooseGoodsToSell g -> out.println("[창고] 팔 상품을 고르세요.");
             case Decision.GameOver g -> {
             }
         }
+    }
+
+    /** 행동을 고를 때 필요한 것만 한 줄로. 자세한 요약은 상태 파일에 있다. */
+    private static String compactStatus(Player player) {
+        List<String> stored = new ArrayList<>();
+        List<Tile> tiles = player.getBoard().getStorage().view();
+        for (int i = 0; i < tiles.size(); i++) {
+            stored.add("#" + i + "=" + tiles.get(i).type());
+        }
+        List<String> goods = new ArrayList<>();
+        for (GoodsColor color : GoodsColor.values()) {
+            int count = player.getBoard().getGoods().count(color);
+            if (count > 0) {
+                goods.add(color + "=" + count);
+            }
+        }
+        return "일꾼 " + player.getWorkers() + " · 은화 " + player.getSilver() + " · 점수 " + player.getScore()
+                + " · 저장소 " + (stored.isEmpty() ? "(비어 있음)" : String.join(", ", stored))
+                + " · 상품 " + (goods.isEmpty() ? "(없음)" : String.join(", ", goods));
     }
 
     /** 행동을 고르는 선택만 "=> 실행" 줄을 남긴다. 주사위 고르기와 효과의 대상 고르기는 남기지 않는다. */
@@ -144,88 +204,15 @@ public final class ConsoleGame {
         };
     }
 
-    private static String describe(Game game, Decision decision, Command command) {
-        Player player = game.currentPlayer();
-        return switch (command) {
-            case Command.UseDie u -> "주사위 " + u.die() + " 사용";
-            case Command.TakeTile t -> dieActionPrefix(decision, t.targetDie())
-                    + takeTileText(player, game.board().depot(t.targetDie()), t.slot(), t.discardIndex(), "");
-            case Command.PlaceTile p -> dieActionPrefix(decision, p.targetDie())
-                    + "저장소[" + p.storageIndex() + "]의 " + storedTile(player, p.storageIndex()).type()
-                    + " 를 cell " + p.cellId() + " 에 배치";
-            case Command.SellGoods s -> {
-                GoodsColor color = GoodsColor.forDie(s.targetDie());
-                yield dieActionPrefix(decision, s.targetDie()) + sellText(player, color);
-            }
-            case Command.TakeWorkers t -> "일꾼 2개 받기";
-            case Command.BuyCentralMarket b -> {
-                String type = game.board().centralMarket().get(b.marketIndex()).type().toString();
-                yield b.discardIndex() == null
-                        ? "[주사위 미사용] 은화 2개로 중앙 시장[" + b.marketIndex() + "]의 " + type + " 구매"
-                        : "[주사위 미사용] 저장소[" + b.discardIndex() + "] 버리고 은화 2개로 중앙 시장["
-                        + b.marketIndex() + "]의 " + type + " 구매"
-                        + " (버림: " + storedTile(player, b.discardIndex()).type() + ")";
-            }
-            case Command.EndTurn e -> "구매하지 않고 턴 종료";
-            case Command.ChooseDepotGoods c ->
-                    "창고 " + c.depot() + " 상품 가져오기 " + game.board().depot(c.depot()).goods();
-            case Command.ChooseBoardTile c -> {
-                BuildingKind kind = ((Decision.ChooseBuildingTile) decision).kind();
-                yield takeTileText(player, game.board().depot(c.depot()), c.slot(), c.discardIndex(), buildingLabel(kind) + " ");
-            }
-            case Command.ChooseGoodsColor c -> sellText(player, c.color());
-        };
-    }
-
-    /** 주사위 행동은 쓴 일꾼 수를, 성 추가 행동은 고른 눈을 앞에 붙인다. */
-    private static String dieActionPrefix(Decision decision, int targetDie) {
-        return switch (decision) {
-            case Decision.ChooseDieAction d -> {
-                int cost = Game.workerCost(d.die(), targetDie);
-                yield cost == 0 ? "" : "[일꾼 " + cost + "개 소모] ";
-            }
-            case Decision.ChooseCastleAction c -> "[성 추가 행동][주사위 " + targetDie + "] ";
-            default -> "";
-        };
-    }
-
-    private static String takeTileText(Player player, Depot depot, int slot, Integer discardIndex, String label) {
-        String type = depot.tileAt(slot).orElseThrow().type().toString();
-        String take = "섹션 " + depot.number() + " 슬롯 " + slot + "에서 타일 " + type + " 가져오기";
-        if (discardIndex == null) {
-            return label + take;
-        }
-        return label + "저장소[" + discardIndex + "] 버리고 " + take
-                + " (버림: " + storedTile(player, discardIndex).type() + ")";
-    }
-
-    private static String sellText(Player player, GoodsColor color) {
-        return color + " 상품 판매 (" + player.getBoard().getGoods().count(color) + "개)";
-    }
-
-    private static Tile storedTile(Player player, int storageIndex) {
-        return player.getBoard().getStorage().get(storageIndex);
-    }
-
-    private static String buildingLabel(BuildingKind kind) {
-        return switch (kind) {
-            case MARKET -> "[시장]";
-            case CARPENTER -> "[목수]";
-            case CHURCH -> "[교회]";
-            case WAREHOUSE -> "[창고]";
-            default -> "[" + kind + "]";
-        };
-    }
-
     // ===== 일어난 일 =====
 
     private void printEvents(Game game) {
         for (GameEvent event : game.drainEvents()) {
-            print(game, event);
+            print(event);
         }
     }
 
-    private void print(Game game, GameEvent event) {
+    private void print(GameEvent event) {
         switch (event) {
             case GameEvent.PhaseStarted e -> {
                 out.println("\n================================");
@@ -235,11 +222,8 @@ public final class ConsoleGame {
             case GameEvent.RoundStarted e -> {
                 out.println("\n--- Phase " + e.phase() + " / Round " + e.round() + " ---");
                 out.println("흰 주사위 " + e.whiteDie() + " → 창고 " + e.whiteDie() + "에 상품(" + e.goods() + ") 배치");
-                out.println(GameBoardConsoleView.render(game.board()));
             }
             case GameEvent.TurnStarted e -> {
-                out.println("\n현재 보드 상태 (" + e.player().getName() + ")");
-                out.println(PlayerConsoleView.render(e.player()));
                 out.println("\n===" + e.player().getName() + "의 턴 ===");
                 out.println("굴린 주사위: " + e.die1() + ", " + e.die2());
             }
@@ -258,8 +242,9 @@ public final class ConsoleGame {
                     out.println("[다리] " + e.player().getName() + "의 턴 순서 토큰이 앞으로 이동했습니다.");
             case GameEvent.BuildingEffectSkipped e -> out.println(e.kind() == BuildingKind.WAREHOUSE
                     ? "[창고] 판매할 상품이 없습니다."
-                    : buildingLabel(e.kind()) + " 가져올 수 있는 타일이 없습니다.");
-            case GameEvent.BuildingTileTaken e -> out.println(buildingLabel(e.kind()) + " 효과를 실행했습니다.");
+                    : CommandText.buildingLabel(e.kind()) + " 가져올 수 있는 타일이 없습니다.");
+            case GameEvent.BuildingTileTaken e ->
+                    out.println(CommandText.buildingLabel(e.kind()) + " 효과를 실행했습니다.");
             case GameEvent.RegionCompleted e -> out.println("[구역 완성] " + e.player().getName()
                     + "이(가) 크기 " + e.size()
                     + " 구역을 완성했습니다! (+" + e.score() + "점, 페이즈 " + e.phase() + ")");

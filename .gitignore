@@ -32,3 +32,6 @@ bin/
 .gradle
 .idea
 build
+# 콘솔 게임의 상태 화면 파일
+status.txt
+status.txt.tmp

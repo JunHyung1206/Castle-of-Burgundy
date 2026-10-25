@@ -121,16 +121,16 @@ castlesofburgundy
   ├─ AppMain.java                  # 엔트리 포인트 (콘솔에서 게임 실행)
   │
   ├─ core                          # 게임 진행 / 규칙의 뼈대
-  │  ├─ GameContext.java           # 공용 보드, 타일 공급 등 게임 전체 상태
-  │  ├─ GameContextFactory.java    # 새 게임 생성 (보드/타일 공급 초기화)
+  │  ├─ Game.java                  # 게임 상태 기계: 진행 위치·대기 중인 선택을 갖고 명령을 검증·적용해 다음 입력까지 진행
+  │  ├─ Decision.java              # 지금 기다리는 입력의 종류(주사위 고르기, 행동, 성 추가 행동, 배·건물 효과 대상, 턴 끝 구매)
+  │  ├─ Command.java               # 플레이어가 내는 명령(데이터). Game.availableActions()에 있는 것만 받아들인다
+  │  ├─ GameEvent.java             # 명령으로 일어난 일. 문장으로 바꾸는 것은 화면의 몫
+  │  ├─ GameContext.java           # 공용 보드, 타일·상품 공급, 주사위 묶음
   │  ├─ Phase.java                 # 페이즈(A~E) enum
-  │  ├─ RoundManager.java          # 페이즈 내 5라운드 진행 + 보드 리셋/보급
-  │  ├─ TurnManager.java           # 주사위 굴리고, 플레이어 액션 메뉴 구성/선택
-  │  ├─ Turn.java                  # 한 턴 동안의 상태(중앙 시장 구매 여부)
+  │  ├─ Turn.java                  # 한 턴 동안의 상태(남은 주사위, 중앙 시장 구매 여부)
   │  ├─ PlayerActions.java         # 플레이어·개인 보드·공용 보드를 함께 바꾸는 액션(검증→차감→이동→효과)
-  │  ├─ PlayerSetup.java           # 플레이어 수/이름 입력, 시작 성(19번 칸) 배치 및 초기 세팅
   │  ├─ TileSupplier.java          # 타입별 타일 풀 관리 + 무작위 공급
-  │  └─ PlacementOutcome.java      # 배치 결과(구역 완성/추가 행동)를 호출부에 전달
+  │  └─ PlacementOutcome.java      # 배치 결과(구역 완성/추가 행동/선택이 필요한 후속 효과)
   │
   ├─ board                         # 공용 보드(번호 창고 1~6 + 중앙 시장)
   │  ├─ GameBoard.java             # 번호 창고 6개, 중앙 시장, 턴 순서 트랙
@@ -159,7 +159,9 @@ castlesofburgundy
   │  ├─ AnimalSpecies.java         # 가축 4종 구분
   │  └─ TileType.java              # CASTLE, SHIP, MINE, ANIMAL, BUILDING, KNOWLEDGE
   │
-  └─ view                          # 콘솔 출력(텍스트 UI)
+  └─ view                          # 콘솔 화면(텍스트 UI)
+     ├─ ConsoleGame.java           # Game의 선택을 메뉴로 보여 주고 고른 명령을 넘긴 뒤, 이벤트를 문장으로 출력
+     ├─ TurnContextView.java       # 행동을 고르기 전 상태 요약(저장소, 상품, 판매 가능, 가축 점수 후보)
      ├─ GameBoardConsoleView.java  # 시장 보드 출력
      ├─ PlayerConsoleView.java     # 개인 보드/저장소/점수 출력
      └─ AsciiUtils.java            # 색상, 정렬 등 ASCII 유틸
@@ -248,7 +250,7 @@ castlesofburgundy
   - 4 : 선박, 건물, 동물, 광산
   - 5 : 광산, 지식, 건물, 건물
   - 6 : 건물, 동물, 성, 선박
-- 페이즈 진행은 `PhaseRunner`, 라운드 카운팅은 `RoundManager`가 담당한다.
+- 페이즈·라운드·차례 진행은 `Game`이 상태로 관리하고, 콘솔(`ConsoleGame`)은 `Game`이 기다리는 선택을 보여 주고 명령을 넘기기만 한다.
 - 게임 보드를 시각화 한다.
 
 #### 각 페이즈가 시작되면 보드판에 타일을 채운다.

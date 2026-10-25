@@ -11,31 +11,28 @@ import castlesofburgundy.tile.BuildingTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 플레이어·개인 보드·공용 보드를 함께 바꾸는 게임 액션.
  * 각 액션은 검증 → 비용 차감(일꾼/은화) → 타일·상품 이동 → 효과 순서로 진행해,
  * 검증에 실패하면 아무 상태도 바꾸지 않는다.
- * 배·건물처럼 배치 후 선택이 필요한 효과도 여기서 GameUi로 선택을 받아 끝까지 처리한다.
+ * 배·건물처럼 배치 후 선택이 필요한 효과는 PlacementOutcome.FollowUp으로 알리고,
+ * 선택이 들어오면 해당 실행 메서드(takeShipGoods 등)로 마무리한다. 진행 순서는 Game이 정한다.
  */
 public final class PlayerActions {
     private static final int CENTRAL_MARKET_COST = 2;
     private static final int WORKERS_PER_TAKE = 2;
 
     private final GameContext ctx;
-    private final GameUi ui;
     private final int playerCount;
 
-    public PlayerActions(GameContext ctx, GameUi ui, int playerCount) {
+    public PlayerActions(GameContext ctx, int playerCount) {
         if (playerCount < 1) {
             throw new IllegalArgumentException("playerCount >= 1");
         }
         this.ctx = ctx;
-        this.ui = ui;
         this.playerCount = playerCount;
     }
 
@@ -108,14 +105,8 @@ public final class PlayerActions {
         }
 
         // 2) 타일 효과
-        boolean grantsExtraAction = applyPlacementEffect(player, tile, cellId);
-
-        if (regionSize > 0) {
-            ui.message("[구역 완성] " + player.getName()
-                    + "이(가) 크기 " + regionSize
-                    + " 구역을 완성했습니다! (+" + regionScore + "점, 페이즈 " + phase + ")");
-        }
-        return new PlacementOutcome(grantsExtraAction, regionSize, regionScore);
+        PlacementOutcome.FollowUp followUp = applyPlacementEffect(player, tile, cellId);
+        return new PlacementOutcome(tile.type() == TileType.CASTLE, regionSize, regionScore, followUp);
     }
 
     public void takeWorkers(Player player) {
@@ -145,140 +136,81 @@ public final class PlayerActions {
     }
 
     /**
-     * 타일을 영지에 놓았을 때의 효과. 모든 타일 효과는 여기서만 적용한다.
-     * 광산은 페이즈 종료 때(PhaseRunner), 지식 타일 효과는 아직 미구현이다.
-     *
-     * @return 성처럼 추가 행동을 주면 true
+     * 타일을 영지에 놓았을 때의 효과. 모든 타일 효과는 여기서만 정한다.
+     * 즉시 효과(가축 점수, 망루·은행·하숙집)는 바로 적용하고, 선택이 필요한 효과는 FollowUp으로 돌려준다.
+     * 성의 추가 행동은 PlacementOutcome.grantsExtraAction, 광산은 페이즈 종료 때(Game), 지식 타일은 미구현이다.
      */
-    private boolean applyPlacementEffect(Player player, Tile tile, int cellId) {
-        switch (tile) {
-            case AnimalTile animal -> player.addScore(animal.scoreIn(player.getBoard().placedTilesInRegion(cellId)));
+    private PlacementOutcome.FollowUp applyPlacementEffect(Player player, Tile tile, int cellId) {
+        return switch (tile) {
+            case AnimalTile animal -> {
+                player.addScore(animal.scoreIn(player.getBoard().placedTilesInRegion(cellId)));
+                yield new PlacementOutcome.FollowUp.None();
+            }
             case BuildingTile building -> buildingEffect(player, building.kind());
-            default -> {
-                if (tile.type() == TileType.SHIP) {
-                    shipEffect(player);
-                }
-            }
-        }
-        return tile.type() == TileType.CASTLE;
+            default -> tile.type() == TileType.SHIP
+                    ? new PlacementOutcome.FollowUp.ShipGoods()
+                    : new PlacementOutcome.FollowUp.None();
+        };
     }
 
-    private void shipEffect(Player player) {
-        List<Depot> depots = new ArrayList<>();
-        List<String> options = new ArrayList<>();
-        for (Depot depot : ctx.board().depots()) {
-            List<GoodsColor> goods = depot.goods();
-            if (!goods.isEmpty()) {
-                depots.add(depot);
-                options.add("창고 " + depot.number() + " 상품 가져오기 " + goods);
+    private PlacementOutcome.FollowUp buildingEffect(Player player, BuildingKind kind) {
+        PlacementOutcome.FollowUp none = new PlacementOutcome.FollowUp.None();
+        return switch (kind) {
+            case WATCHTOWER -> {
+                player.addScore(4);
+                yield none;
             }
+            case BANK -> {
+                player.addSilver(2);
+                yield none;
+            }
+            case BOARDING_HOUSE -> {
+                player.gainWorkers(4);
+                yield none;
+            }
+            case MARKET -> new PlacementOutcome.FollowUp.BoardTile(kind, EnumSet.of(TileType.SHIP, TileType.ANIMAL));
+            case CARPENTER -> new PlacementOutcome.FollowUp.BoardTile(kind, EnumSet.of(TileType.BUILDING));
+            case CHURCH -> new PlacementOutcome.FollowUp.BoardTile(
+                    kind, EnumSet.of(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE));
+            case WAREHOUSE -> new PlacementOutcome.FollowUp.WarehouseSale();
+            case TOWN_HALL -> none; // 시청: 미구현
+        };
+    }
+
+    /** 배 효과로 고를 수 있는 창고: 상품이 쌓여 있는 번호 창고. */
+    public List<Depot> depotsWithGoods() {
+        return ctx.board().depots().stream()
+                .filter(depot -> !depot.goods().isEmpty())
+                .toList();
+    }
+
+    /**
+     * 배 효과: 창고의 상품을 모두 가져온다. 상품 저장소 3색 제한으로 둘 수 없는 상품은 버려진다.
+     * 턴 순서 이동은 상품이 없어도 일어나므로 advanceTurnOrder로 따로 한다.
+     */
+    public ShipGoods takeShipGoods(Player player, int depotNumber) {
+        Depot depot = ctx.board().depot(depotNumber);
+        if (depot.goods().isEmpty()) {
+            throw new IllegalStateException("상품이 없는 창고입니다: " + depot);
         }
 
-        if (depots.isEmpty()) {
-            ui.message("[배] 가져올 상품이 있는 창고가 없습니다.");
-        } else {
-            Depot depot = depots.get(ui.chooseIndex(options));
-            int stored = 0;
-            int dropped = 0;
-            for (GoodsColor color : depot.takeAllGoods()) {
-                if (player.getBoard().getGoods().add(color)) {
-                    stored++;
-                } else {
-                    dropped++;
-                }
-            }
-
-            ui.message("[배] 창고 " + depot.number() + "에서 상품 " + stored + "개를 가져왔습니다.");
-            if (dropped > 0) {
-                ui.message("[배] 상품 저장소 색 제한으로 " + dropped + "개는 보관하지 못했습니다.");
+        int stored = 0;
+        int dropped = 0;
+        for (GoodsColor color : depot.takeAllGoods()) {
+            if (player.getBoard().getGoods().add(color)) {
+                stored++;
+            } else {
+                dropped++;
             }
         }
+        return new ShipGoods(stored, dropped);
+    }
 
+    public record ShipGoods(int stored, int dropped) {
+    }
+
+    public void advanceTurnOrder(Player player) {
         ctx.board().turnOrder().advance(player);
-        ui.message("[다리] " + player.getName() + "의 턴 순서 토큰이 앞으로 이동했습니다.");
-    }
-
-    private void buildingEffect(Player player, BuildingKind kind) {
-        switch (kind) {
-            case WATCHTOWER -> player.addScore(4);
-            case BANK -> player.addSilver(2);
-            case BOARDING_HOUSE -> player.gainWorkers(4);
-            case MARKET -> takeBoardTileByBuildingEffect(player, EnumSet.of(TileType.SHIP, TileType.ANIMAL), "[시장]");
-            case CARPENTER -> takeBoardTileByBuildingEffect(player, EnumSet.of(TileType.BUILDING), "[목수]");
-            case CHURCH -> takeBoardTileByBuildingEffect(
-                    player,
-                    EnumSet.of(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE),
-                    "[교회]"
-            );
-            case WAREHOUSE -> sellGoodsByWarehouse(player);
-            case TOWN_HALL -> {
-                // 시청: 미구현
-            }
-        }
-    }
-
-    private void takeBoardTileByBuildingEffect(Player player, Set<TileType> allowedTypes, String label) {
-        List<String> options = new ArrayList<>();
-        List<Runnable> effects = new ArrayList<>();
-
-        for (Depot depot : ctx.board().depots()) {
-            for (int slotIndex = 0; slotIndex < depot.slotCount(); slotIndex++) {
-                Tile tile = depot.tileAt(slotIndex).orElse(null);
-                if (tile == null || !allowedTypes.contains(tile.type())) {
-                    continue;
-                }
-
-                int depotNumber = depot.number();
-                int sIdx = slotIndex;
-                if (!storage(player).isFull()) {
-                    options.add(label + " 섹션 " + depotNumber + " 슬롯 " + sIdx
-                            + "에서 타일 " + tile.type() + " 가져오기");
-                    effects.add(() -> takeTileFromBoard(player, 0, depotNumber, sIdx));
-                    continue;
-                }
-
-                List<Tile> stored = storage(player).view();
-                for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
-                    int discardIndex = storageIndex;
-                    Tile discarded = stored.get(storageIndex);
-                    options.add(label + " 저장소[" + discardIndex + "] 버리고 섹션 "
-                            + depotNumber + " 슬롯 " + sIdx
-                            + "에서 타일 " + tile.type() + " 가져오기"
-                            + " (버림: " + discarded.type() + ")");
-                    effects.add(() -> replaceTileFromBoard(player, 0, depotNumber, sIdx, discardIndex));
-                }
-            }
-        }
-
-        if (options.isEmpty()) {
-            ui.message(label + " 가져올 수 있는 타일이 없습니다.");
-            return;
-        }
-
-        effects.get(ui.chooseIndex(options)).run();
-        ui.message(label + " 효과를 실행했습니다.");
-    }
-
-    private void sellGoodsByWarehouse(Player player) {
-        List<String> options = new ArrayList<>();
-        List<GoodsColor> colors = new ArrayList<>();
-
-        for (GoodsColor color : GoodsColor.values()) {
-            int count = player.getBoard().getGoods().count(color);
-            if (count > 0) {
-                colors.add(color);
-                options.add(color + " 상품 판매 (" + count + "개)");
-            }
-        }
-
-        if (options.isEmpty()) {
-            ui.message("[창고] 판매할 상품이 없습니다.");
-            return;
-        }
-
-        GoodsColor color = colors.get(ui.chooseIndex(options));
-        int sold = sellGoods(player, 0, color);
-        ui.message("[창고] " + color + " " + sold + "개 → 은화 +1, 점수 +" + scoreForSelling(sold));
     }
 
     private static Storage storage(Player player) {

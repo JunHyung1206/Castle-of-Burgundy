@@ -4,39 +4,25 @@ import castlesofburgundy.board.Depot;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.AnimalTile;
-import castlesofburgundy.tile.BuildingKind;
-import castlesofburgundy.tile.BuildingTile;
 import castlesofburgundy.tile.Tile;
-import castlesofburgundy.tile.TileType;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 public final class TurnManager {
     private final GameContext ctx;
     private final GameUi ui;
-    private final int playerCount;
-    private final TurnOrder turnOrder;
+    private final PlayerActions playerActions;
 
     public TurnManager(GameContext ctx, GameUi ui) {
-        this(ctx, ui, 1, null);
+        this(ctx, ui, 1);
     }
 
     public TurnManager(GameContext ctx, GameUi ui, int playerCount) {
-        this(ctx, ui, playerCount, null);
-    }
-
-    public TurnManager(GameContext ctx, GameUi ui, int playerCount, TurnOrder turnOrder) {
-        if (playerCount < 1) {
-            throw new IllegalArgumentException("playerCount >= 1");
-        }
         this.ctx = ctx;
         this.ui = ui;
-        this.playerCount = playerCount;
-        this.turnOrder = turnOrder;
+        this.playerActions = new PlayerActions(ctx, ui, playerCount);
     }
 
     public void playerTurn(Player player, Phase phase) {
@@ -46,42 +32,71 @@ public final class TurnManager {
 
         ui.message("굴린 주사위: " + d1 + ", " + d2);
 
-        handleDie(player, d1, 1, phase);
-        handleDie(player, d2, 2, phase);
+        Turn turn = new Turn();
+        handleDie(player, d1, 1, phase, turn);
+        handleDie(player, d2, 2, phase, turn);
+        offerCentralMarketAfterDice(player, turn);
     }
 
     /**
-     * 하나의 선택 가능한 액션.
+     * 하나의 선택 가능한 액션. 메뉴 설명과 실행만 담고, 실제 상태 변경은 PlayerActions가 한다.
      * apply 실행 결과 boolean = 성 효과처럼 '추가 행동'을 부여하면 true.
-     * apply 안에서는 상태만 바꾸고 결과를 서술(ui.message)할 뿐, 메뉴 출력·입력·추가 행동 진행은 호출부가 담당한다.
+     * usesDie = false면 주사위를 쓰지 않는 액션(중앙 시장 구매)이라 같은 주사위로 다시 고른다.
      */
-    public record Action(String description, BooleanSupplier apply) {
+    public record Action(String description, boolean usesDie, BooleanSupplier apply) {
+        public Action(String description, BooleanSupplier apply) {
+            this(description, true, apply);
+        }
     }
 
     private record DieSetting(int adjustedDie, String label) {
     }
 
-    private void handleDie(Player player, int die, int dieIndex, Phase phase) {
+    private void handleDie(Player player, int die, int dieIndex, Phase phase, Turn turn) {
         ui.message("\n[" + dieIndex + "번째 주사위: " + die + "]");
-        ui.message("현재 일꾼 수 : " + player.getWorkers());
+        while (true) {
+            ui.message("현재 일꾼 수 : " + player.getWorkers());
 
-        List<Action> actions = buildOptionsForDie(player, die, phase);
-        ui.message(renderActionContext(player, die));
+            List<Action> actions = buildOptionsForDie(player, die, phase, turn);
+            ui.message(renderActionContext(player, die));
 
-        Action selected = chooseAction(actions);
-        boolean grantsExtraAction = selected.apply().getAsBoolean();
-        ui.message("=> 실행: " + selected.description());
+            Action selected = chooseAction(actions);
+            boolean grantsExtraAction = selected.apply().getAsBoolean();
+            ui.message("=> 실행: " + selected.description());
 
-        if (grantsExtraAction) {
-            runCastleExtraAction(player, phase);
+            if (!selected.usesDie()) {
+                continue; // 중앙 시장 구매는 주사위를 쓰지 않으므로 같은 주사위로 다시 고른다
+            }
+            if (grantsExtraAction) {
+                runCastleExtraAction(player, phase);
+            }
+            return;
         }
+    }
+
+    /** 주사위를 다 쓴 뒤에도 이번 턴에 구매하지 않았다면 중앙 시장 구매 기회를 한 번 준다. */
+    private void offerCentralMarketAfterDice(Player player, Turn turn) {
+        List<Action> purchases = new ArrayList<>();
+        buyTileFromCentralMarketAction(player, turn, purchases);
+        if (purchases.isEmpty()) {
+            return;
+        }
+
+        List<Action> options = new ArrayList<>();
+        options.add(new Action("구매하지 않고 턴 종료", false, () -> false));
+        options.addAll(purchases);
+
+        ui.message("\n[턴 종료 전] 중앙 시장에서 한 번 구매할 수 있습니다.");
+        Action selected = chooseAction(options);
+        selected.apply().getAsBoolean();
+        ui.message("=> 실행: " + selected.description());
     }
 
     private static int wrapAdd(int face, int delta) {
         return ((face - 1 + delta) % 6 + 6) % 6 + 1;
     }
 
-    public List<Action> buildOptionsForDie(Player player, int baseDie, Phase phase) {
+    List<Action> buildOptionsForDie(Player player, int baseDie, Phase phase, Turn turn) {
         List<Action> actions = new ArrayList<>();
         int availableWorkers = player.getWorkers();
         int maxWorkersToUse = Math.min(3, availableWorkers);
@@ -101,7 +116,7 @@ public final class TurnManager {
             addActionsForSetting(player, used, plusDie, "[일꾼 " + used + "개 소모] ", phase, actions);
         }
 
-        buyTileFromCentralMarketAction(player, actions);
+        buyTileFromCentralMarketAction(player, turn, actions);
         takeWorkersAction(player, actions);
         return actions;
     }
@@ -131,28 +146,15 @@ public final class TurnManager {
             for (int cellId : player.getBoard().legalPlacements(t, adjustedDie)) {
                 String desc = prefix + "저장소[" + sIdx + "]의 " + t.type() + " 를 cell " + cellId + " 에 배치";
 
-                actions.add(new Action(desc, () -> {
-                    player.spendWorkers(usedWorkers);
-                    PlacementOutcome outcome = PlayerActions.placeTileFromStorage(player, sIdx, cellId, adjustedDie, phase);
-                    if (t.type() == TileType.SHIP) {
-                        handleShipPlacement(player);
-                    }
-                    if (t instanceof BuildingTile building) {
-                        handleBuildingPlacement(player, building.kind());
-                    }
-                    if (outcome.completedRegionSize() > 0) {
-                        ui.message("[구역 완성] " + player.getName()
-                                + "이(가) 크기 " + outcome.completedRegionSize()
-                                + " 구역을 완성했습니다! (+" + outcome.regionScore() + "점, 페이즈 " + phase + ")");
-                    }
-                    return outcome.grantsExtraAction();
-                }));
+                actions.add(new Action(desc, () -> playerActions
+                        .placeTileFromStorage(player, usedWorkers, sIdx, cellId, adjustedDie, phase)
+                        .grantsExtraAction()));
             }
         }
     }
 
-    private void buyTileFromCentralMarketAction(Player player, List<Action> actions) {
-        if (player.getSilver() < 2) {
+    private void buyTileFromCentralMarketAction(Player player, Turn turn, List<Action> actions) {
+        if (!turn.canBuyFromCentralMarket() || player.getSilver() < 2) {
             return;
         }
 
@@ -165,10 +167,11 @@ public final class TurnManager {
             int mIdx = marketIndex;
             Tile tile = centralMarket.get(marketIndex);
             if (!player.getBoard().getStorage().isFull()) {
-                String desc = "은화 2개로 중앙 시장[" + marketIndex + "]의 "
+                String desc = "[주사위 미사용] 은화 2개로 중앙 시장[" + marketIndex + "]의 "
                         + tile.type() + " 구매";
-                actions.add(new Action(desc, () -> {
-                    PlayerActions.buyTileFromCentralMarket(ctx, player, mIdx);
+                actions.add(new Action(desc, false, () -> {
+                    playerActions.buyTileFromCentralMarket(player, mIdx);
+                    turn.markCentralMarketBought();
                     return false;
                 }));
                 continue;
@@ -178,104 +181,16 @@ public final class TurnManager {
             for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
                 int discardIndex = storageIndex;
                 Tile discarded = stored.get(storageIndex);
-                String desc = "저장소[" + discardIndex + "] 버리고 은화 2개로 중앙 시장["
+                String desc = "[주사위 미사용] 저장소[" + discardIndex + "] 버리고 은화 2개로 중앙 시장["
                         + marketIndex + "]의 " + tile.type() + " 구매"
                         + " (버림: " + discarded.type() + ")";
-                actions.add(new Action(desc, () -> {
-                    PlayerActions.replaceTileFromCentralMarket(ctx, player, mIdx, discardIndex);
+                actions.add(new Action(desc, false, () -> {
+                    playerActions.replaceTileFromCentralMarket(player, mIdx, discardIndex);
+                    turn.markCentralMarketBought();
                     return false;
                 }));
             }
         }
-    }
-
-    private void handleBuildingPlacement(Player player, BuildingKind kind) {
-        switch (kind) {
-            case MARKET -> takeBoardTileByBuildingEffect(
-                    player,
-                    EnumSet.of(TileType.SHIP, TileType.ANIMAL),
-                    "[시장]"
-            );
-            case CARPENTER -> takeBoardTileByBuildingEffect(
-                    player,
-                    EnumSet.of(TileType.BUILDING),
-                    "[목수]"
-            );
-            case CHURCH -> takeBoardTileByBuildingEffect(
-                    player,
-                    EnumSet.of(TileType.MINE, TileType.KNOWLEDGE, TileType.CASTLE),
-                    "[교회]"
-            );
-            case WAREHOUSE -> sellGoodsByWarehouse(player);
-            default -> {
-            }
-        }
-    }
-
-    private void takeBoardTileByBuildingEffect(Player player, Set<TileType> allowedTypes, String label) {
-        List<String> options = new ArrayList<>();
-        List<Runnable> effects = new ArrayList<>();
-
-        for (Depot depot : ctx.board().depots()) {
-            for (int slotIndex = 0; slotIndex < depot.slotCount(); slotIndex++) {
-                Tile tile = depot.tileAt(slotIndex).orElse(null);
-                if (tile == null || !allowedTypes.contains(tile.type())) {
-                    continue;
-                }
-
-                int depotNumber = depot.number();
-                int sIdx = slotIndex;
-                if (!player.getBoard().getStorage().isFull()) {
-                    options.add(label + " 섹션 " + depotNumber + " 슬롯 " + sIdx
-                            + "에서 타일 " + tile.type() + " 가져오기");
-                    effects.add(() -> PlayerActions.takeTileFromBoard(ctx, player, depotNumber, sIdx));
-                    continue;
-                }
-
-                List<Tile> stored = player.getBoard().getStorage().view();
-                for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
-                    int discardIndex = storageIndex;
-                    Tile discarded = stored.get(storageIndex);
-                    options.add(label + " 저장소[" + discardIndex + "] 버리고 섹션 "
-                            + depotNumber + " 슬롯 " + sIdx
-                            + "에서 타일 " + tile.type() + " 가져오기"
-                            + " (버림: " + discarded.type() + ")");
-                    effects.add(() -> PlayerActions.replaceTileFromBoard(ctx, player, depotNumber, sIdx, discardIndex));
-                }
-            }
-        }
-
-        if (options.isEmpty()) {
-            ui.message(label + " 가져올 수 있는 타일이 없습니다.");
-            return;
-        }
-
-        int choice = ui.chooseIndex(options);
-        effects.get(choice).run();
-        ui.message(label + " 효과를 실행했습니다.");
-    }
-
-    private void sellGoodsByWarehouse(Player player) {
-        List<String> options = new ArrayList<>();
-        List<GoodsColor> colors = new ArrayList<>();
-
-        for (GoodsColor color : GoodsColor.values()) {
-            int count = player.getBoard().getGoods().count(color);
-            if (count > 0) {
-                colors.add(color);
-                options.add(color + " 상품 판매 (" + count + "개)");
-            }
-        }
-
-        if (options.isEmpty()) {
-            ui.message("[창고] 판매할 상품이 없습니다.");
-            return;
-        }
-
-        int choice = ui.chooseIndex(options);
-        GoodsColor color = colors.get(choice);
-        int sold = PlayerActions.sellGoods(player, color, playerCount);
-        ui.message("[창고] " + color + " " + sold + "개 → 은화 +1, 점수 +" + (sold * playerCount));
     }
 
     private void sellGoodsAction(Player player,
@@ -291,56 +206,10 @@ public final class TurnManager {
 
         String desc = prefix + color + " 상품 판매 (" + count + "개)";
         actions.add(new Action(desc, () -> {
-            player.spendWorkers(usedWorkers);
-            int sold = PlayerActions.sellGoods(player, color, playerCount);
-            ui.message("[상품 판매] " + color + " " + sold + "개 → 은화 +1, 점수 +" + (sold * playerCount));
+            int sold = playerActions.sellGoods(player, usedWorkers, color);
+            ui.message("[상품 판매] " + color + " " + sold + "개 → 은화 +1, 점수 +" + playerActions.scoreForSelling(sold));
             return false;
         }));
-    }
-
-    private void handleShipPlacement(Player player) {
-        List<Depot> depots = new ArrayList<>();
-        List<String> options = new ArrayList<>();
-        for (Depot depot : ctx.board().depots()) {
-            List<GoodsColor> goods = depot.goods();
-            if (!goods.isEmpty()) {
-                depots.add(depot);
-                options.add("창고 " + depot.number() + " 상품 가져오기 " + goods);
-            }
-        }
-
-        if (depots.isEmpty()) {
-            ui.message("[배] 가져올 상품이 있는 창고가 없습니다.");
-            advanceTurnOrder(player);
-            return;
-        }
-
-        int choice = ui.chooseIndex(options);
-        Depot depot = depots.get(choice);
-        List<GoodsColor> taken = depot.takeAllGoods();
-        int stored = 0;
-        int dropped = 0;
-        for (GoodsColor color : taken) {
-            if (player.getBoard().getGoods().add(color)) {
-                stored++;
-            } else {
-                dropped++;
-            }
-        }
-
-        ui.message("[배] 창고 " + depot.number() + "에서 상품 " + stored + "개를 가져왔습니다.");
-        if (dropped > 0) {
-            ui.message("[배] 상품 저장소 색 제한으로 " + dropped + "개는 보관하지 못했습니다.");
-        }
-        advanceTurnOrder(player);
-    }
-
-    private void advanceTurnOrder(Player player) {
-        if (turnOrder == null) {
-            return;
-        }
-        turnOrder.advance(player);
-        ui.message("[다리] " + player.getName() + "의 턴 순서 토큰이 앞으로 이동했습니다.");
     }
 
     private void takeTileFromBoardAction(Player player,
@@ -360,8 +229,7 @@ public final class TurnManager {
                 String desc = prefix + "섹션 " + adjustedDie + " 슬롯 " + slotIndex
                         + "에서 타일 " + tile.type() + " 가져오기";
                 actions.add(new Action(desc, () -> {
-                    player.spendWorkers(usedWorkers);
-                    PlayerActions.takeTileFromBoard(ctx, player, adjustedDie, sIdx);
+                    playerActions.takeTileFromBoard(player, usedWorkers, adjustedDie, sIdx);
                     return false;
                 }));
                 continue;
@@ -376,8 +244,7 @@ public final class TurnManager {
                         + "에서 타일 " + tile.type() + " 가져오기"
                         + " (버림: " + discarded.type() + ")";
                 actions.add(new Action(desc, () -> {
-                    player.spendWorkers(usedWorkers);
-                    PlayerActions.replaceTileFromBoard(ctx, player, adjustedDie, sIdx, discardIndex);
+                    playerActions.replaceTileFromBoard(player, usedWorkers, adjustedDie, sIdx, discardIndex);
                     return false;
                 }));
             }
@@ -386,7 +253,7 @@ public final class TurnManager {
 
     private void takeWorkersAction(Player player, List<Action> actions) {
         actions.add(new Action("일꾼 2개 받기", () -> {
-            PlayerActions.takeWorkers(player);
+            playerActions.takeWorkers(player);
             return false;
         }));
     }
@@ -451,7 +318,7 @@ public final class TurnManager {
             if (count > 0) {
                 parts.add(setting.label() + " 주사위 " + setting.adjustedDie()
                         + " -> " + color + " " + count + "개 판매 가능"
-                        + " (+은화 1, +" + (count * playerCount) + "점)");
+                        + " (+은화 1, +" + playerActions.scoreForSelling(count) + "점)");
             }
         }
         return parts.isEmpty() ? "(없음)" : "\n- " + String.join("\n- ", parts);

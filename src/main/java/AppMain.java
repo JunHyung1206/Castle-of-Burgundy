@@ -2,6 +2,7 @@ import castlesofburgundy.core.*;
 import castlesofburgundy.player.*;
 import castlesofburgundy.view.ConsoleUi;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class AppMain {
@@ -14,12 +15,12 @@ public class AppMain {
 
         Player[] players = PlayerSetup.setupPlayers(ui, ctx.goodsSupply());
 
-        TurnOrder turnOrder = new TurnOrder(players);
-        TurnManager tm = new TurnManager(ctx, ui, players.length, turnOrder);
+        ctx.board().turnOrder().seat(List.of(players));
+        TurnManager tm = new TurnManager(ctx, ui, players.length);
         RoundManager rm = new RoundManager();
-        PhaseRunner pr = new PhaseRunner(ctx, rm, tm, ui, turnOrder);
+        PhaseRunner pr = new PhaseRunner(ctx, rm, tm, ui);
 
-        pr.runAllPhases(players);
+        pr.runAllPhases();
 
         ui.message("\n=== 최종 게임 보드 ===");
         ui.showGameBoard(ctx.board());

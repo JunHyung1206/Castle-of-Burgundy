@@ -12,28 +12,23 @@ public class PhaseRunner {
     private final RoundManager roundManager;
     private final TurnManager turnManager;
     private final GameUi ui;
-    private final TurnOrder turnOrder;
 
     public PhaseRunner(GameContext ctx, RoundManager roundManager, TurnManager turnManager, GameUi ui) {
-        this(ctx, roundManager, turnManager, ui, null);
-    }
-
-    public PhaseRunner(GameContext ctx, RoundManager roundManager, TurnManager turnManager, GameUi ui, TurnOrder turnOrder) {
         this.ctx = ctx;
         this.roundManager = roundManager;
         this.turnManager = turnManager;
         this.ui = ui;
-        this.turnOrder = turnOrder;
     }
 
-    public void runAllPhases(Player[] players) {
+    /** 공용 보드의 턴 순서 트랙에 앉은 플레이어들로 다섯 페이즈를 진행한다. */
+    public void runAllPhases() {
         for (Phase phase : Phase.values()) {
-            runPhase(phase, players);
+            runPhase(phase);
         }
         ui.message("\n=== 모든 페이즈 종료 ===");
     }
 
-    public void runPhase(Phase phase, Player[] players) {
+    public void runPhase(Phase phase) {
 
         startNewPhase();
         ui.message("\n================================");
@@ -51,7 +46,8 @@ public class PhaseRunner {
             ui.showGameBoard(ctx.board());
 
             // 각 플레이어 차례대로
-            for (Player player : playersForRound(players)) {
+            // 라운드 도중 배로 순서가 바뀌어도 다음 라운드부터 반영된다
+            for (Player player : ctx.board().turnOrder().currentOrder()) {
                 ui.message("\n현재 보드 상태 (" + player.getName() + ")");
                 ui.showPlayer(player);
 
@@ -59,7 +55,7 @@ public class PhaseRunner {
             }
         }
 
-        endPhase(players);
+        endPhase(ctx.board().turnOrder().currentOrder());
 
         ui.message("\n=== Phase " + phase + " 종료 ===");
     }
@@ -80,7 +76,7 @@ public class PhaseRunner {
     /**
      * 페이즈 종료 정산: 영지에 놓인 광산 1개당 은화 1개를 받는다.
      */
-    void endPhase(Player[] players) {
+    void endPhase(List<Player> players) {
         for (Player player : players) {
             int mines = player.getBoard().countPlacedOfType(TileType.MINE);
             if (mines > 0) {
@@ -98,12 +94,5 @@ public class PhaseRunner {
         ctx.board().refillDepots(ctx.tileSupplier()::draw);
         ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         roundManager.resetForNewPhase();
-    }
-
-    private List<Player> playersForRound(Player[] players) {
-        if (turnOrder == null) {
-            return List.of(players);
-        }
-        return turnOrder.currentOrder();
     }
 }

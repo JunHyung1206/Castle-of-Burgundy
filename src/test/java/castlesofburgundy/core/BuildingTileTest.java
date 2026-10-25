@@ -25,7 +25,7 @@ class BuildingTileTest {
     /** cell 26(BUILDING/die3)은 성(19)과 인접하고, 도시 {26,27,32,33,37}이라 단독 배치로는 구역이 완성되지 않는다. */
     private void placeBuildingAt26(BuildingKind kind) {
         player.getBoard().getStorage().add(new BuildingTile(0, kind));
-        PlayerActions.placeTileFromStorage(player, 0, 26, 3, Phase.A);
+        TestGames.actions(2).placeTileFromStorage(player, 0, 0, 26, 3, Phase.A);
     }
 
     @Test

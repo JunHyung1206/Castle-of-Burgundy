@@ -111,7 +111,7 @@ class BuildingEffectActionTest {
     }
 
     private TurnManager.Action placeBuildingAt26(TurnManager tm, Player player) {
-        return tm.buildOptionsForDie(player, 3, Phase.A).stream()
+        return tm.buildOptionsForDie(player, 3, Phase.A, new Turn()).stream()
                 .filter(action -> action.description().contains("저장소[0]의 BUILDING")
                         && action.description().contains("cell 26"))
                 .findFirst()

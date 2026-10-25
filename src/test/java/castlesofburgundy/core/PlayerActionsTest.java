@@ -40,7 +40,7 @@ class PlayerActionsTest {
         int beforeSize = p.getBoard().getStorage().size();
         Tile expectedTile = ctx.board().depot(1).tileAt(0).get();
 
-        PlayerActions.takeTileFromBoard(ctx, p, 1, 0);
+        TestGames.actions(ctx).takeTileFromBoard(p, 0, 1, 0);
 
         assertThat(p.getBoard().getStorage().size()).isEqualTo(beforeSize + 1); // 개인 보드의 저장소에 한개 추가된다.
         assertThat(ctx.board().depot(1).tileAt(0).isPresent()).isFalse();  // 가져온 후 공용보드에는 타일이 없다.
@@ -65,7 +65,7 @@ class PlayerActionsTest {
 
         Tile expectedTile = ctx.board().depot(1).tileAt(0).get();
 
-        Tile actualDiscarded = PlayerActions.replaceTileFromBoard(ctx, p, 1, 0, 1);
+        Tile actualDiscarded = TestGames.actions(ctx).replaceTileFromBoard(p, 0, 1, 0, 1);
 
         assertThat(actualDiscarded).isEqualTo(discarded);
         assertThat(ctx.board().depot(1).tileAt(0).isPresent()).isFalse();
@@ -82,7 +82,7 @@ class PlayerActionsTest {
 
         Tile expectedTile = ctx.board().centralMarket().get(0);
 
-        PlayerActions.buyTileFromCentralMarket(ctx, p, 0);
+        TestGames.actions(ctx).buyTileFromCentralMarket(p, 0);
 
         assertThat(p.getSilver()).isZero();
         assertThat(ctx.board().centralMarket()).hasSize(7);
@@ -107,7 +107,7 @@ class PlayerActionsTest {
 
         Tile expectedTile = ctx.board().centralMarket().get(0);
 
-        Tile actualDiscarded = PlayerActions.replaceTileFromCentralMarket(ctx, p, 0, 1);
+        Tile actualDiscarded = TestGames.actions(ctx).replaceTileFromCentralMarket(p, 0, 1);
 
         assertThat(actualDiscarded).isEqualTo(discarded);
         assertThat(p.getSilver()).isZero();
@@ -124,7 +124,7 @@ class PlayerActionsTest {
         p.getBoard().getStorage().add(new CastleTile(99));
 
         // cell 2: CASTLE / die 5, 7번과 인접
-        PlacementOutcome outcome = PlayerActions.placeTileFromStorage(p, 0, 2, 5, Phase.A);
+        PlacementOutcome outcome = TestGames.actions(2).placeTileFromStorage(p, 0, 0, 2, 5, Phase.A);
 
         assertThat(outcome.grantsExtraAction()).isTrue();
         assertThat(outcome.completedRegionSize()).isZero(); // {2,3,7} 중 3은 아직 비어 미완성
@@ -137,7 +137,7 @@ class PlayerActionsTest {
         p.getBoard().getStorage().add(BaseTile.of(TileType.KNOWLEDGE, 100));
 
         // cell 13: KNOWLEDGE / die 1, 시작 성(19)과 인접
-        PlacementOutcome outcome = PlayerActions.placeTileFromStorage(p, 0, 13, 1, Phase.A);
+        PlacementOutcome outcome = TestGames.actions(2).placeTileFromStorage(p, 0, 0, 13, 1, Phase.A);
 
         assertThat(outcome.grantsExtraAction()).isFalse();
         assertThat(outcome.completedRegionSize()).isZero();
@@ -159,7 +159,7 @@ class PlayerActionsTest {
 
     private PlacementOutcome place(Player p, TileType type, int cellId, int die) {
         p.getBoard().getStorage().add(BaseTile.of(type, cellId));
-        return PlayerActions.placeTileFromStorage(p, 0, cellId, die, Phase.A);
+        return TestGames.actions(2).placeTileFromStorage(p, 0, 0, cellId, die, Phase.A);
     }
 
     @Test
@@ -170,7 +170,7 @@ class PlayerActionsTest {
         p.getBoard().getGoods().add(GoodsColor.RED);
         p.getBoard().getGoods().add(GoodsColor.RED);
 
-        int sold = PlayerActions.sellGoods(p, GoodsColor.RED, 3);
+        int sold = TestGames.actions(3).sellGoods(p, 0, GoodsColor.RED);
 
         assertThat(sold).isEqualTo(3);
         assertThat(p.getSilver()).isEqualTo(1);     // 개수와 무관하게 은화 1
@@ -183,10 +183,65 @@ class PlayerActionsTest {
     void sellNothingNoReward() {
         Player p = newPlayer();
 
-        int sold = PlayerActions.sellGoods(p, GoodsColor.BROWN, 4);
+        int sold = TestGames.actions(4).sellGoods(p, 0, GoodsColor.BROWN);
 
         assertThat(sold).isZero();
         assertThat(p.getSilver()).isZero();
         assertThat(p.getScore()).isZero();
+    }
+
+    @Test
+    @DisplayName("배치할 수 없으면 일꾼을 쓰지 않고 저장소의 타일도 그대로 둔다")
+    void illegalPlacementChangesNothing() {
+        Player p = newPlayer(); // 일꾼 2
+        Tile knowledge = BaseTile.of(TileType.KNOWLEDGE, 100);
+        p.getBoard().getStorage().add(knowledge);
+
+        // cell 13은 die 1 칸이라 die 2로는 놓을 수 없다
+        assertThrows(IllegalArgumentException.class,
+                () -> TestGames.actions(2).placeTileFromStorage(p, 1, 0, 13, 2, Phase.A));
+
+        assertThat(p.getWorkers()).isEqualTo(2);
+        assertThat(p.getBoard().getStorage().view()).containsExactly(knowledge);
+        assertThat(p.getBoard().isOccupied(13)).isFalse();
+    }
+
+    @Test
+    @DisplayName("저장소가 가득 차면 공용 보드 타일과 일꾼은 그대로 남는다")
+    void takeTileWithFullStorageChangesNothing() {
+        GameContext ctx = simpleContext();
+        Player p = newPlayer(); // 일꾼 2
+        p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 1));
+        p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 2));
+        p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 3));
+        Tile onBoard = ctx.board().depot(1).tileAt(0).orElseThrow();
+
+        assertThrows(IllegalStateException.class,
+                () -> TestGames.actions(ctx).takeTileFromBoard(p, 1, 1, 0));
+
+        assertThat(ctx.board().depot(1).tileAt(0)).contains(onBoard);
+        assertThat(p.getWorkers()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("타일 가져오기에 쓴 일꾼만큼 차감된다")
+    void takeTileSpendsWorkers() {
+        GameContext ctx = simpleContext();
+        Player p = newPlayer(); // 일꾼 2
+
+        TestGames.actions(ctx).takeTileFromBoard(p, 2, 1, 0);
+
+        assertThat(p.getWorkers()).isZero();
+        assertThat(p.getBoard().getStorage().size()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("팔 상품이 없으면 일꾼도 쓰지 않는다")
+    void sellNothingKeepsWorkers() {
+        Player p = newPlayer(); // 일꾼 2
+
+        TestGames.actions(2).sellGoods(p, 1, GoodsColor.BROWN);
+
+        assertThat(p.getWorkers()).isEqualTo(2);
     }
 }

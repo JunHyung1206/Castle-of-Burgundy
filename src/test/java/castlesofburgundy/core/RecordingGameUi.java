@@ -17,11 +17,20 @@ final class RecordingGameUi implements GameUi {
     final List<String> messages = new ArrayList<>();
     private final Deque<Integer> scriptedChoices = new ArrayDeque<>();
     private final Deque<String> scriptedLines = new ArrayDeque<>();
+    private final Deque<String> scriptedOptionTexts = new ArrayDeque<>();
+    final List<List<String>> menus = new ArrayList<>();
     int chooseCalls = 0;
 
     void scriptChoices(int... choices) {
         for (int c : choices) {
             scriptedChoices.add(c);
+        }
+    }
+
+    /** 보기 중 이 문자열을 포함한 첫 항목을 차례로 고른다. (scriptChoices보다 먼저 소비) */
+    void scriptOptionsContaining(String... texts) {
+        for (String t : texts) {
+            scriptedOptionTexts.add(t);
         }
     }
 
@@ -43,6 +52,16 @@ final class RecordingGameUi implements GameUi {
     @Override
     public int chooseIndex(List<String> options) {
         chooseCalls++;
+        menus.add(List.copyOf(options));
+        if (!scriptedOptionTexts.isEmpty()) {
+            String text = scriptedOptionTexts.poll();
+            for (int i = 0; i < options.size(); i++) {
+                if (options.get(i).contains(text)) {
+                    return i;
+                }
+            }
+            throw new AssertionError("'" + text + "'를 포함한 보기가 없습니다: " + options);
+        }
         return scriptedChoices.isEmpty() ? 0 : scriptedChoices.poll();
     }
 

@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * 공용 보드: 번호 창고 1~6과 중앙 검은 창고(중앙 시장).
+ * 공용 보드: 번호 창고 1~6, 중앙 검은 창고(중앙 시장), 턴 순서 트랙.
  * 타일을 어디서 뽑을지는 모르고, 채울 때 뽑는 함수를 받는다.
  */
 public final class GameBoard {
@@ -26,9 +26,14 @@ public final class GameBoard {
             new Depot(6, List.of(TileType.BUILDING, TileType.ANIMAL, TileType.CASTLE, TileType.SHIP))
     );
     private final List<Tile> centralMarket = new ArrayList<>();
+    private final TurnOrder turnOrder = new TurnOrder();
 
     public List<Depot> depots() {
         return depots;
+    }
+
+    public TurnOrder turnOrder() {
+        return turnOrder;
     }
 
     public Depot depot(int number) {

@@ -1,4 +1,4 @@
-package castlesofburgundy.core;
+package castlesofburgundy.board;
 
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
@@ -6,7 +6,10 @@ import castlesofburgundy.player.Player;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TurnOrderTest {
 
@@ -22,7 +25,8 @@ class TurnOrderTest {
         Player p1 = newPlayer("P1");
         Player p2 = newPlayer("P2");
         Player p3 = newPlayer("P3");
-        TurnOrder turnOrder = new TurnOrder(new Player[]{p1, p2, p3});
+        TurnOrder turnOrder = new TurnOrder();
+        turnOrder.seat(List.of(p1, p2, p3));
 
         turnOrder.advance(p3);
 
@@ -38,10 +42,20 @@ class TurnOrderTest {
     void firstPlayerCannotAdvanceFurther() {
         Player p1 = newPlayer("P1");
         Player p2 = newPlayer("P2");
-        TurnOrder turnOrder = new TurnOrder(new Player[]{p1, p2});
+        TurnOrder turnOrder = new TurnOrder();
+        turnOrder.seat(List.of(p1, p2));
 
         turnOrder.advance(p1);
 
         assertThat(turnOrder.currentOrder()).containsExactly(p1, p2);
+    }
+
+    @Test
+    @DisplayName("턴 순서는 한 번만 정할 수 있다")
+    void seatOnlyOnce() {
+        TurnOrder turnOrder = new TurnOrder();
+        turnOrder.seat(List.of(newPlayer("P1")));
+
+        assertThrows(IllegalStateException.class, () -> turnOrder.seat(List.of(newPlayer("P2"))));
     }
 }

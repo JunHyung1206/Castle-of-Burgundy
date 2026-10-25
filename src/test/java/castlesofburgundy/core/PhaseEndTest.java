@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PhaseEndTest {
@@ -40,7 +42,7 @@ class PhaseEndTest {
 
         assertThat(player.getSilver()).isZero();
 
-        phaseRunner.endPhase(new Player[]{player});
+        phaseRunner.endPhase(List.of(player));
 
         assertThat(player.getSilver()).isEqualTo(2);
     }
@@ -52,7 +54,7 @@ class PhaseEndTest {
         board.setupInitialCastle(19);
         Player player = new Player(board, "P1");
 
-        phaseRunner.endPhase(new Player[]{player});
+        phaseRunner.endPhase(List.of(player));
 
         assertThat(player.getSilver()).isZero();
     }

@@ -1,6 +1,7 @@
 package castlesofburgundy.core;
 
 import castlesofburgundy.board.GameBoard;
+import castlesofburgundy.board.TurnOrder;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.goods.GoodsSupply;
 import castlesofburgundy.player.PersonalBoard;
@@ -39,7 +40,7 @@ class TurnManagerGoodsTest {
         player.getBoard().getGoods().add(GoodsColor.RED);
         player.getBoard().getGoods().add(GoodsColor.RED);
 
-        List<TurnManager.Action> options = tm.buildOptionsForDie(player, 1, Phase.A);
+        List<TurnManager.Action> options = tm.buildOptionsForDie(player, 1, Phase.A, new Turn());
 
         TurnManager.Action sellRed = options.stream()
                 .filter(action -> action.description().contains("RED 상품 판매"))
@@ -64,7 +65,7 @@ class TurnManagerGoodsTest {
         Player player = newPlayer("P1");
         player.addSilver(2);
 
-        TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A).stream()
+        TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A, new Turn()).stream()
                 .filter(action -> action.description().contains("중앙 시장[0]")
                         && action.description().contains("은화 2개"))
                 .findFirst()
@@ -87,7 +88,7 @@ class TurnManagerGoodsTest {
         Player player = newPlayer("P1");
         player.addSilver(1);
 
-        List<TurnManager.Action> options = tm.buildOptionsForDie(player, 1, Phase.A);
+        List<TurnManager.Action> options = tm.buildOptionsForDie(player, 1, Phase.A, new Turn());
 
         assertThat(options).noneMatch(action -> action.description().contains("중앙 시장"));
     }
@@ -104,7 +105,7 @@ class TurnManagerGoodsTest {
         player.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 2));
         player.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 3));
 
-        TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A).stream()
+        TurnManager.Action purchase = tm.buildOptionsForDie(player, 1, Phase.A, new Turn()).stream()
                 .filter(action -> action.description().contains("저장소[1] 버리고")
                         && action.description().contains("중앙 시장[0]"))
                 .findFirst()
@@ -128,12 +129,13 @@ class TurnManagerGoodsTest {
         Player p2 = newPlayer("P2");
         p2.getBoard().getStorage().add(BaseTile.of(TileType.SHIP, 100));
 
-        TurnOrder turnOrder = new TurnOrder(new Player[]{p1, p2});
+        TurnOrder turnOrder = ctx.board().turnOrder();
+        turnOrder.seat(List.of(p1, p2));
         RecordingGameUi ui = new RecordingGameUi();
         ui.scriptChoices(0);
-        TurnManager tm = new TurnManager(ctx, ui, 2, turnOrder);
+        TurnManager tm = new TurnManager(ctx, ui, 2);
 
-        TurnManager.Action placeShip = tm.buildOptionsForDie(p2, 5, Phase.A).stream()
+        TurnManager.Action placeShip = tm.buildOptionsForDie(p2, 5, Phase.A, new Turn()).stream()
                 .filter(action -> action.description().contains("SHIP")
                         && action.description().contains("cell 20"))
                 .findFirst()

@@ -55,7 +55,7 @@ class RegionScoreTest {
             player.getBoard().getStorage().add(BaseTile.of(type, cellId));
 
             // 페이즈 A 라고 가정, workerUsed는 0
-            PlayerActions.placeTileFromStorage(player, 0, cellId, die, Phase.A);
+            TestGames.actions(2).placeTileFromStorage(player, 0, 0, cellId, die, Phase.A);
         }
 
         int afterScore = player.getScore();
@@ -82,7 +82,7 @@ class RegionScoreTest {
         for (int cellId : region) {
             PersonalCell cell = layout.get(cellId);
             player.getBoard().getStorage().add(BaseTile.of(cell.type(), cellId));
-            PlayerActions.placeTileFromStorage(player, 0, cellId, cell.die(), Phase.B);
+            TestGames.actions(2).placeTileFromStorage(player, 0, 0, cellId, cell.die(), Phase.B);
         }
 
         // 페이즈 B(+8) / 구역크기 1(+1) → 총 9점
@@ -100,7 +100,7 @@ class RegionScoreTest {
         int beforeScore = player.getScore();
         for (int[] cd : cellAndDie) {
             player.getBoard().getStorage().add(BaseTile.of(TileType.BUILDING, cd[0]));
-            PlayerActions.placeTileFromStorage(player, 0, cd[0], cd[1], Phase.A);
+            TestGames.actions(2).placeTileFromStorage(player, 0, 0, cd[0], cd[1], Phase.A);
         }
 
         // 페이즈 A(+10) / 구역크기 5(+15) → 총 25점

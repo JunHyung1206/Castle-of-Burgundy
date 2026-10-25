@@ -47,7 +47,7 @@ class TurnManagerTest {
 
         int die = 1; // 섹션 1
 
-        List<TurnManager.Action> options = tm.buildOptionsForDie(p, die, Phase.A);
+        List<TurnManager.Action> options = tm.buildOptionsForDie(p, die, Phase.A, new Turn());
 
 
         assertThat(options).anyMatch(opt -> opt.description().contains("섹션 1")); // 설명 문자열에 '시장 섹션 1 슬롯' 이 포함된 옵션이 있는지 체크
@@ -67,7 +67,7 @@ class TurnManagerTest {
         p.getBoard().getStorage().add(BaseTile.of(TileType.ANIMAL, 3));
         assertThat(p.getBoard().getStorage().isFull()).isTrue();
 
-        List<TurnManager.Action> options = tm.buildOptionsForDie(p, 1, Phase.A);
+        List<TurnManager.Action> options = tm.buildOptionsForDie(p, 1, Phase.A, new Turn());
 
         assertThat(options).anyMatch(opt -> opt.description().contains("저장소[0] 버리고")
                 && opt.description().contains("섹션 1 슬롯 0"));
@@ -98,7 +98,7 @@ class TurnManagerTest {
 
         int die = 1; // 13번 칸이 die=1이라고 가정
 
-        List<TurnManager.Action> options = tm.buildOptionsForDie(p, die, Phase.A);
+        List<TurnManager.Action> options = tm.buildOptionsForDie(p, die, Phase.A, new Turn());
 
         assertThat(options).anyMatch(opt -> opt.description().contains("저장소[0]의 KNOWLEDGE"));
     }
@@ -112,7 +112,7 @@ class TurnManagerTest {
 
         int die = 1;
 
-        List<TurnManager.Action> options = tm.buildOptionsForDie(p, die, Phase.A);
+        List<TurnManager.Action> options = tm.buildOptionsForDie(p, die, Phase.A, new Turn());
 
         // [일꾼1, +] 또는 [일꾼1, -] 로 시작하는 옵션 하나를 찾는다.
         TurnManager.Action opt = options.stream()

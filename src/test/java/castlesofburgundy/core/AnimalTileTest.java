@@ -29,7 +29,7 @@ class AnimalTileTest {
     private int placeAnimal(AnimalSpecies species, int count, int cellId, int die) {
         int before = player.getScore();
         player.getBoard().getStorage().add(new AnimalTile(nextTileId++, species, count));
-        PlayerActions.placeTileFromStorage(player, 0, cellId, die, Phase.A);
+        TestGames.actions(2).placeTileFromStorage(player, 0, 0, cellId, die, Phase.A);
         return player.getScore() - before;
     }
 

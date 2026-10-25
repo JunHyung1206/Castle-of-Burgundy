@@ -75,7 +75,7 @@ class TurnManagerCastleTest {
         player.getBoard().getStorage().add(BaseTile.of(TileType.KNOWLEDGE, 3));
 
         TurnManager tm = new TurnManager(ctx, ui);
-        TurnManager.Action place4 = tm.buildOptionsForDie(player, 3, Phase.A).stream()
+        TurnManager.Action place4 = tm.buildOptionsForDie(player, 3, Phase.A, new Turn()).stream()
                 .filter(a -> a.description().contains("cell 4 에 배치"))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("cell 4 배치 옵션이 있어야 한다"));

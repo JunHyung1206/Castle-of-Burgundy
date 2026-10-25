@@ -1,7 +1,5 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.core.Phase;
-import castlesofburgundy.core.PlayerActions;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.player.Player;
@@ -30,7 +28,7 @@ class PlayerConsoleViewTest {
     void boardShowsPlacedAnimalSpeciesAndCount() {
         Player player = newPlayer();
         player.getBoard().getStorage().add(new AnimalTile(100, AnimalSpecies.SHEEP, 3));
-        PlayerActions.placeTileFromStorage(player, 0, 1, 6, Phase.A);
+        player.getBoard().placeFromStorage(0, 1, 6);
 
         String rendered = PlayerConsoleView.render(player);
 

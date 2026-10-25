@@ -1,6 +1,5 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.TileType;
@@ -41,8 +40,6 @@ public class PhaseRunner {
         ui.message("=== Phase " + phase + " 시작 ===");
         ui.message("================================");
 
-        BoardState boardState = ctx.boardState();
-
         while (roundManager.hasMoreRounds()) {
             int round = roundManager.nextRound();
             ui.message("\n--- Phase " + phase + " / Round " + round + " ---");
@@ -51,7 +48,7 @@ public class PhaseRunner {
             placeRoundGoods();
 
             // 라운드 시작 시 시장 상태 출력
-            ui.showGameBoard(ctx.layout(), boardState);
+            ui.showGameBoard(ctx.board());
 
             // 각 플레이어 차례대로
             for (Player player : playersForRound(players)) {
@@ -75,7 +72,7 @@ public class PhaseRunner {
     int placeRoundGoods() {
         int whiteDie = ctx.dice().roll();
         GoodsColor goods = ctx.goodsSupply().draw();
-        ctx.boardState().addGoods(whiteDie, goods);
+        ctx.board().depot(whiteDie).addGoods(goods);
         ui.message("흰 주사위 " + whiteDie + " → 창고 " + whiteDie + "에 상품(" + goods + ") 배치");
         return whiteDie;
     }
@@ -98,8 +95,8 @@ public class PhaseRunner {
      * 라운드 카운터를 초기화한다.
      */
     private void startNewPhase() {
-        ctx.boardState().fillAllFromSupply(ctx.tileSupplier());
-        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        ctx.board().refillDepots(ctx.tileSupplier()::draw);
+        ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         roundManager.resetForNewPhase();
     }
 

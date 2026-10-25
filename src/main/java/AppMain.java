@@ -22,7 +22,7 @@ public class AppMain {
         pr.runAllPhases(players);
 
         ui.message("\n=== 최종 게임 보드 ===");
-        ui.showGameBoard(ctx.layout(), ctx.boardState());
+        ui.showGameBoard(ctx.board());
 
         for (Player p : players) {
             ui.message("\n=== 최종 플레이어 보드 (" + p.getName() + ") ===");

@@ -134,11 +134,9 @@ castlesofburgundy
   │  ├─ TilePlacementResult.java   # 타일 효과 결과(추가 행동/점수/일꾼/은화)
   │  └─ PlacementOutcome.java      # 배치 결과(구역 완성/추가 행동)를 호출부에 전달
   │
-  ├─ board                         # 공용 시장 보드(섹션 1~6 + 중앙 시장)
-  │  ├─ GameBoardLayout.java       # 각 섹션별 슬롯 타입 정보 (건물/선박/지식/동물/광산/성)
-  │  ├─ SectionLayout.java         # 섹션 하나(1~6)의 정적 정의
-  │  ├─ BoardSlot.java             # (섹션 번호, 슬롯 index) 값 객체
-  │  └─ BoardState.java            # 슬롯 타일 배치 + 중앙 시장 + 창고별 상품 누적 상태
+  ├─ board                         # 공용 보드(번호 창고 1~6 + 중앙 시장)
+  │  ├─ GameBoard.java             # 번호 창고 6개와 중앙 시장, 페이즈 시작 시 다시 채우기
+  │  └─ Depot.java                 # 번호 창고 하나: 칸별 허용 타입·육각 타일 + 쌓인 상품
   │
   ├─ goods                         # 교역 상품
   │  ├─ GoodsColor.java            # 상품 6색과 주사위 눈 매핑

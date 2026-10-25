@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 
@@ -20,7 +19,7 @@ public interface GameUi {
     /** 프롬프트를 보여주고 한 줄 입력을 받는다. */
     String askLine(String prompt);
 
-    void showGameBoard(GameBoardLayout layout, BoardState boardState);
+    void showGameBoard(GameBoard board);
 
     void showPersonalBoard(PersonalBoard board);
 

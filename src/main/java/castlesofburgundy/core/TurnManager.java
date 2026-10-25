@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardSlot;
-import castlesofburgundy.board.BoardState;
+import castlesofburgundy.board.Depot;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.AnimalTile;
@@ -84,24 +83,22 @@ public final class TurnManager {
 
     public List<Action> buildOptionsForDie(Player player, int baseDie, Phase phase) {
         List<Action> actions = new ArrayList<>();
-        BoardState boardState = ctx.boardState();
-
         int availableWorkers = player.getWorkers();
         int maxWorkersToUse = Math.min(3, availableWorkers);
 
         // 일꾼 0개 사용 (조정 없음)
-        addActionsForSetting(player, boardState, 0, baseDie, "", phase, actions);
+        addActionsForSetting(player, 0, baseDie, "", phase, actions);
 
         // 일꾼 1~max 사용, 각 ± 방향
         for (int used = 1; used <= maxWorkersToUse; used++) {
             int minusDie = wrapAdd(baseDie, -used);
-            addActionsForSetting(player, boardState, used, minusDie, "[일꾼 " + used + "개 소모] ", phase, actions);
+            addActionsForSetting(player, used, minusDie, "[일꾼 " + used + "개 소모] ", phase, actions);
 
             if (used == 3) {
                 break;  // ±3은 같은 눈이라 한 번만 표시
             }
             int plusDie = wrapAdd(baseDie, +used);
-            addActionsForSetting(player, boardState, used, plusDie, "[일꾼 " + used + "개 소모] ", phase, actions);
+            addActionsForSetting(player, used, plusDie, "[일꾼 " + used + "개 소모] ", phase, actions);
         }
 
         buyTileFromCentralMarketAction(player, actions);
@@ -109,8 +106,8 @@ public final class TurnManager {
         return actions;
     }
 
-    private void addActionsForSetting(Player player, BoardState boardState, int usedWorkers, int adjustedDie, String prefix, Phase phase, List<Action> actions) {
-        takeTileFromBoardAction(player, boardState, usedWorkers, adjustedDie, prefix, actions);
+    private void addActionsForSetting(Player player, int usedWorkers, int adjustedDie, String prefix, Phase phase, List<Action> actions) {
+        takeTileFromBoardAction(player, usedWorkers, adjustedDie, prefix, actions);
         placeTileFromStorageAction(player, usedWorkers, adjustedDie, prefix, phase, actions);
         sellGoodsAction(player, usedWorkers, adjustedDie, prefix, actions);
     }
@@ -159,7 +156,7 @@ public final class TurnManager {
             return;
         }
 
-        List<Tile> centralMarket = ctx.boardState().centralMarket();
+        List<Tile> centralMarket = ctx.board().centralMarket();
         if (centralMarket.isEmpty()) {
             return;
         }
@@ -219,34 +216,32 @@ public final class TurnManager {
         List<String> options = new ArrayList<>();
         List<Runnable> effects = new ArrayList<>();
 
-        for (BoardSlot slot : ctx.layout().asSlots()) {
-            Tile tile = ctx.boardState().get(slot).orElse(null);
-            if (tile == null || !allowedTypes.contains(tile.type())) {
-                continue;
-            }
+        for (Depot depot : ctx.board().depots()) {
+            for (int slotIndex = 0; slotIndex < depot.slotCount(); slotIndex++) {
+                Tile tile = depot.tileAt(slotIndex).orElse(null);
+                if (tile == null || !allowedTypes.contains(tile.type())) {
+                    continue;
+                }
 
-            if (!player.getBoard().getStorage().isFull()) {
-                options.add(label + " 섹션 " + slot.sectionId() + " 슬롯 " + slot.index()
-                        + "에서 타일 " + tile.type() + " 가져오기");
-                effects.add(() -> PlayerActions.takeTileFromBoard(ctx, player, slot.sectionId(), slot.index()));
-                continue;
-            }
+                int depotNumber = depot.number();
+                int sIdx = slotIndex;
+                if (!player.getBoard().getStorage().isFull()) {
+                    options.add(label + " 섹션 " + depotNumber + " 슬롯 " + sIdx
+                            + "에서 타일 " + tile.type() + " 가져오기");
+                    effects.add(() -> PlayerActions.takeTileFromBoard(ctx, player, depotNumber, sIdx));
+                    continue;
+                }
 
-            List<Tile> stored = player.getBoard().getStorage().view();
-            for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
-                int discardIndex = storageIndex;
-                Tile discarded = stored.get(storageIndex);
-                options.add(label + " 저장소[" + discardIndex + "] 버리고 섹션 "
-                        + slot.sectionId() + " 슬롯 " + slot.index()
-                        + "에서 타일 " + tile.type() + " 가져오기"
-                        + " (버림: " + discarded.type() + ")");
-                effects.add(() -> PlayerActions.replaceTileFromBoard(
-                        ctx,
-                        player,
-                        slot.sectionId(),
-                        slot.index(),
-                        discardIndex
-                ));
+                List<Tile> stored = player.getBoard().getStorage().view();
+                for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
+                    int discardIndex = storageIndex;
+                    Tile discarded = stored.get(storageIndex);
+                    options.add(label + " 저장소[" + discardIndex + "] 버리고 섹션 "
+                            + depotNumber + " 슬롯 " + sIdx
+                            + "에서 타일 " + tile.type() + " 가져오기"
+                            + " (버림: " + discarded.type() + ")");
+                    effects.add(() -> PlayerActions.replaceTileFromBoard(ctx, player, depotNumber, sIdx, discardIndex));
+                }
             }
         }
 
@@ -304,25 +299,25 @@ public final class TurnManager {
     }
 
     private void handleShipPlacement(Player player) {
-        List<Integer> warehouses = new ArrayList<>();
+        List<Depot> depots = new ArrayList<>();
         List<String> options = new ArrayList<>();
-        for (int warehouse = 1; warehouse <= 6; warehouse++) {
-            List<GoodsColor> goods = ctx.boardState().goodsAt(warehouse);
+        for (Depot depot : ctx.board().depots()) {
+            List<GoodsColor> goods = depot.goods();
             if (!goods.isEmpty()) {
-                warehouses.add(warehouse);
-                options.add("창고 " + warehouse + " 상품 가져오기 " + goods);
+                depots.add(depot);
+                options.add("창고 " + depot.number() + " 상품 가져오기 " + goods);
             }
         }
 
-        if (warehouses.isEmpty()) {
+        if (depots.isEmpty()) {
             ui.message("[배] 가져올 상품이 있는 창고가 없습니다.");
             advanceTurnOrder(player);
             return;
         }
 
         int choice = ui.chooseIndex(options);
-        int warehouse = warehouses.get(choice);
-        List<GoodsColor> taken = ctx.boardState().takeAllGoods(warehouse);
+        Depot depot = depots.get(choice);
+        List<GoodsColor> taken = depot.takeAllGoods();
         int stored = 0;
         int dropped = 0;
         for (GoodsColor color : taken) {
@@ -333,7 +328,7 @@ public final class TurnManager {
             }
         }
 
-        ui.message("[배] 창고 " + warehouse + "에서 상품 " + stored + "개를 가져왔습니다.");
+        ui.message("[배] 창고 " + depot.number() + "에서 상품 " + stored + "개를 가져왔습니다.");
         if (dropped > 0) {
             ui.message("[배] 상품 저장소 색 제한으로 " + dropped + "개는 보관하지 못했습니다.");
         }
@@ -349,15 +344,13 @@ public final class TurnManager {
     }
 
     private void takeTileFromBoardAction(Player player,
-                                         BoardState boardState,
                                          int usedWorkers,
                                          int adjustedDie,
                                          String prefix,
                                          List<Action> actions) {
-        for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
-            BoardSlot slot = new BoardSlot(adjustedDie, slotIndex);
-
-            Tile tile = boardState.get(slot).orElse(null);
+        Depot depot = ctx.board().depot(adjustedDie);
+        for (int slotIndex = 0; slotIndex < depot.slotCount(); slotIndex++) {
+            Tile tile = depot.tileAt(slotIndex).orElse(null);
             if (tile == null) {
                 continue;
             }
@@ -412,7 +405,7 @@ public final class TurnManager {
                 goodsSummary(player),
                 sellableGoodsSummary(player, baseDie),
                 animalScoreCandidatesSummary(player, baseDie),
-                warehouseGoodsSummary(),
+                depotGoodsSummary(),
                 player.getSilver(),
                 player.getScore()
         );
@@ -515,12 +508,12 @@ public final class TurnManager {
         return settings;
     }
 
-    private String warehouseGoodsSummary() {
+    private String depotGoodsSummary() {
         List<String> parts = new ArrayList<>();
-        for (int warehouse = 1; warehouse <= 6; warehouse++) {
-            List<GoodsColor> goods = ctx.boardState().goodsAt(warehouse);
+        for (Depot depot : ctx.board().depots()) {
+            List<GoodsColor> goods = depot.goods();
             if (!goods.isEmpty()) {
-                parts.add(warehouse + "=" + goods);
+                parts.add(depot.number() + "=" + goods);
             }
         }
         return parts.isEmpty() ? "(empty)" : String.join(", ", parts);
@@ -553,7 +546,7 @@ public final class TurnManager {
 
     public List<Action> buildCastleActionOptionsForDie(Player player, int baseDie, Phase phase) {
         List<Action> actions = new ArrayList<>();
-        addActionsForSetting(player, ctx.boardState(), 0, baseDie, "", phase, actions);
+        addActionsForSetting(player, 0, baseDie, "", phase, actions);
         return actions;
     }
 

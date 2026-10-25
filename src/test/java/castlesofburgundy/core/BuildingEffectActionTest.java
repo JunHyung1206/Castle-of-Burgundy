@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.goods.GoodsSupply;
 import castlesofburgundy.player.PersonalBoard;
@@ -13,18 +12,19 @@ import castlesofburgundy.tile.TileType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BuildingEffectActionTest {
 
     private GameContext simpleContext() {
-        GameBoardLayout layout = new GameBoardLayout();
-        BoardState boardState = new BoardState(layout);
+        GameBoard board = new GameBoard();
         TileSupplier supplier = new TileSupplier(1L);
-        boardState.fillAllFromSupply(supplier);
-        return new GameContext(1L, layout, boardState, supplier, new Dice(1L), new GoodsSupply(1L));
+        board.refillDepots(supplier::draw);
+        return new GameContext(1L, board, supplier, new Dice(1L), new GoodsSupply(1L));
     }
 
     private Player newPlayer() {
@@ -119,7 +119,9 @@ class BuildingEffectActionTest {
     }
 
     private long countBoardTiles(GameContext ctx, Set<TileType> types) {
-        return ctx.boardState().snapshot().values().stream()
+        return ctx.board().depots().stream()
+                .flatMap(depot -> IntStream.range(0, depot.slotCount()).mapToObj(depot::tileAt))
+                .flatMap(Optional::stream)
                 .filter(tile -> types.contains(tile.type()))
                 .count();
     }

@@ -1,7 +1,6 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.core.GameUi;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
@@ -50,8 +49,8 @@ public final class ConsoleUi implements GameUi {
     }
 
     @Override
-    public void showGameBoard(GameBoardLayout layout, BoardState boardState) {
-        System.out.println(GameBoardConsoleView.render(layout, boardState));
+    public void showGameBoard(GameBoard board) {
+        System.out.println(GameBoardConsoleView.render(board));
     }
 
     @Override

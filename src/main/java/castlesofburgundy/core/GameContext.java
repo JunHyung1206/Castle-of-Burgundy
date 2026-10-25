@@ -1,13 +1,11 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.goods.GoodsSupply;
 
 public record GameContext(
         long seed,
-        GameBoardLayout layout,
-        BoardState boardState,
+        GameBoard board,
         TileSupplier tileSupplier,
         Dice dice,
         GoodsSupply goodsSupply

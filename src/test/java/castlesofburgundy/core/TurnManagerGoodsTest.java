@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.goods.GoodsSupply;
 import castlesofburgundy.player.PersonalBoard;
@@ -19,10 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TurnManagerGoodsTest {
 
     private GameContext emptyContext() {
-        GameBoardLayout layout = new GameBoardLayout();
-        BoardState boardState = new BoardState(layout);
+        GameBoard board = new GameBoard();
         TileSupplier supplier = new TileSupplier(1L);
-        return new GameContext(1L, layout, boardState, supplier, new Dice(1L), new GoodsSupply(1L));
+        return new GameContext(1L, board, supplier, new Dice(1L), new GoodsSupply(1L));
     }
 
     private Player newPlayer(String name) {
@@ -60,7 +58,7 @@ class TurnManagerGoodsTest {
     @DisplayName("은화 2개와 중앙 시장 타일이 있으면 구매 액션이 생긴다")
     void buildOptionsIncludesCentralMarketPurchase() {
         GameContext ctx = emptyContext();
-        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         RecordingGameUi ui = new RecordingGameUi();
         TurnManager tm = new TurnManager(ctx, ui, 2);
         Player player = newPlayer("P1");
@@ -77,14 +75,14 @@ class TurnManagerGoodsTest {
         assertThat(extraAction).isFalse();
         assertThat(player.getSilver()).isZero();
         assertThat(player.getBoard().getStorage().size()).isEqualTo(1);
-        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+        assertThat(ctx.board().centralMarket()).hasSize(7);
     }
 
     @Test
     @DisplayName("은화가 2개 미만이면 중앙 시장 구매 액션은 생기지 않는다")
     void buildOptionsExcludesCentralMarketPurchaseWithoutSilver() {
         GameContext ctx = emptyContext();
-        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         TurnManager tm = new TurnManager(ctx, new RecordingGameUi(), 2);
         Player player = newPlayer("P1");
         player.addSilver(1);
@@ -98,7 +96,7 @@ class TurnManagerGoodsTest {
     @DisplayName("저장소가 가득 차 있어도 버릴 타일을 고르면 중앙 시장 타일을 구매할 수 있다")
     void buildOptionsCentralMarketPurchaseReplacesStoredTile() {
         GameContext ctx = emptyContext();
-        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         TurnManager tm = new TurnManager(ctx, new RecordingGameUi(), 2);
         Player player = newPlayer("P1");
         player.addSilver(2);
@@ -116,15 +114,15 @@ class TurnManagerGoodsTest {
 
         assertThat(player.getSilver()).isZero();
         assertThat(player.getBoard().getStorage().size()).isEqualTo(3);
-        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+        assertThat(ctx.board().centralMarket()).hasSize(7);
     }
 
     @Test
     @DisplayName("배를 놓으면 선택한 창고의 상품을 모두 가져오고 턴 순서가 한 칸 앞으로 간다")
     void shipPlacementTakesGoodsAndAdvancesTurnOrder() {
         GameContext ctx = emptyContext();
-        ctx.boardState().addGoods(2, GoodsColor.RED);
-        ctx.boardState().addGoods(2, GoodsColor.PINK);
+        ctx.board().depot(2).addGoods(GoodsColor.RED);
+        ctx.board().depot(2).addGoods(GoodsColor.PINK);
 
         Player p1 = newPlayer("P1");
         Player p2 = newPlayer("P2");
@@ -143,7 +141,7 @@ class TurnManagerGoodsTest {
 
         placeShip.apply().getAsBoolean();
 
-        assertThat(ctx.boardState().goodsAt(2)).isEmpty();
+        assertThat(ctx.board().depot(2).goods()).isEmpty();
         assertThat(p2.getBoard().getGoods().count(GoodsColor.RED)).isEqualTo(1);
         assertThat(p2.getBoard().getGoods().count(GoodsColor.PINK)).isEqualTo(1);
         assertThat(turnOrder.currentOrder()).containsExactly(p2, p1);

@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.player.Player;
@@ -20,10 +19,9 @@ class PhaseEndTest {
 
     @BeforeEach
     void setUp() {
-        GameBoardLayout layout = new GameBoardLayout();
-        BoardState boardState = new BoardState(layout);
+        GameBoard board = new GameBoard();
         TileSupplier supplier = new TileSupplier(1L);
-        GameContext ctx = new GameContext(1L, layout, boardState, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
+        GameContext ctx = new GameContext(1L, board, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
 
         ui = new RecordingGameUi();
         TurnManager tm = new TurnManager(ctx, ui);

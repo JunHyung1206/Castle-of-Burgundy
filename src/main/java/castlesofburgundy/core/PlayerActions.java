@@ -1,6 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.*;
+import castlesofburgundy.board.Depot;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.Tile;
@@ -12,33 +12,13 @@ public final class PlayerActions {
     }
 
     public static void takeTileFromBoard(GameContext ctx, Player player, int dieValue, int slotIndex) {
-        if (dieValue < 1 || dieValue > 6) {
-            throw new IllegalArgumentException("주사위 눈은 1~6");
-        }
-        if (slotIndex < 0 || slotIndex >= 4) {
-            throw new IllegalArgumentException("slotIndex 0~3");
-        }
-
-        BoardState boardState = ctx.boardState();
-
-        BoardSlot slot = new BoardSlot(dieValue, slotIndex);
-        Tile tile = boardState.removeAt(slot).orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot));
-
+        Tile tile = takeDepotTile(ctx, dieValue, slotIndex);
         player.getBoard().getStorage().add(tile);
     }
 
     public static Tile replaceTileFromBoard(GameContext ctx, Player player, int dieValue, int slotIndex, int storageIndexToDiscard) {
-        if (dieValue < 1 || dieValue > 6) {
-            throw new IllegalArgumentException("주사위 눈은 1~6");
-        }
-        if (slotIndex < 0 || slotIndex >= 4) {
-            throw new IllegalArgumentException("slotIndex 0~3");
-        }
         requireStorageIndex(player, storageIndexToDiscard);
-
-        BoardSlot slot = new BoardSlot(dieValue, slotIndex);
-        Tile tile = ctx.boardState().removeAt(slot)
-                .orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + slot));
+        Tile tile = takeDepotTile(ctx, dieValue, slotIndex);
 
         Tile discarded = player.getBoard().getStorage().removeAt(storageIndexToDiscard);
         player.getBoard().getStorage().add(tile);
@@ -52,7 +32,7 @@ public final class PlayerActions {
 
         requireCentralMarketTile(ctx, marketIndex);
         player.spendSilver(CENTRAL_MARKET_COST);
-        Tile tile = ctx.boardState().removeCentralMarketAt(marketIndex)
+        Tile tile = ctx.board().removeCentralMarketAt(marketIndex)
                 .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
         player.getBoard().getStorage().add(tile);
     }
@@ -62,15 +42,22 @@ public final class PlayerActions {
         requireCentralMarketTile(ctx, marketIndex);
 
         player.spendSilver(CENTRAL_MARKET_COST);
-        Tile tile = ctx.boardState().removeCentralMarketAt(marketIndex)
+        Tile tile = ctx.board().removeCentralMarketAt(marketIndex)
                 .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
         Tile discarded = player.getBoard().getStorage().removeAt(storageIndexToDiscard);
         player.getBoard().getStorage().add(tile);
         return discarded;
     }
 
+    /** 주사위 눈 = 창고 번호. 칸이 비어 있으면 예외. */
+    private static Tile takeDepotTile(GameContext ctx, int depotNumber, int slotIndex) {
+        Depot depot = ctx.board().depot(depotNumber);
+        return depot.takeTile(slotIndex)
+                .orElseThrow(() -> new IllegalStateException("해당 슬롯에 타일이 없습니다: " + depot + "#" + slotIndex));
+    }
+
     private static Tile requireCentralMarketTile(GameContext ctx, int marketIndex) {
-        return ctx.boardState().getCentralMarket(marketIndex)
+        return ctx.board().getCentralMarket(marketIndex)
                 .orElseThrow(() -> new IllegalStateException("중앙 시장에 타일이 없습니다: " + marketIndex));
     }
 

@@ -1,6 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.*;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.player.PersonalBoard;
@@ -18,11 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PlayerActionsTest {
 
     private GameContext simpleContext() {
-        GameBoardLayout layout = new GameBoardLayout();
         TileSupplier supplier = new TileSupplier(42L);
-        BoardState boardState = new BoardState(layout);
-        boardState.fillAllFromSupply(supplier);
-        return new GameContext(1L, layout, boardState, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
+        GameBoard board = new GameBoard();
+        board.refillDepots(supplier::draw);
+        return new GameContext(1L, board, supplier, new Dice(1L), new castlesofburgundy.goods.GoodsSupply(1L));
     }
 
     private Player newPlayer() {
@@ -37,15 +36,14 @@ class PlayerActionsTest {
         GameContext ctx = simpleContext();
         Player p = newPlayer();
 
-        BoardSlot slot = new BoardSlot(1, 0);
-        assertThat(ctx.boardState().hasTile(slot)).isTrue();
+        assertThat(ctx.board().depot(1).tileAt(0).isPresent()).isTrue();
         int beforeSize = p.getBoard().getStorage().size();
-        Tile expectedTile = ctx.boardState().get(slot).get();
+        Tile expectedTile = ctx.board().depot(1).tileAt(0).get();
 
         PlayerActions.takeTileFromBoard(ctx, p, 1, 0);
 
         assertThat(p.getBoard().getStorage().size()).isEqualTo(beforeSize + 1); // 개인 보드의 저장소에 한개 추가된다.
-        assertThat(ctx.boardState().hasTile(slot)).isFalse();  // 가져온 후 공용보드에는 타일이 없다.
+        assertThat(ctx.board().depot(1).tileAt(0).isPresent()).isFalse();  // 가져온 후 공용보드에는 타일이 없다.
 
         assertThat(p.getBoard().getStorage().view().get(0)).isEqualTo(expectedTile);
     }
@@ -65,13 +63,12 @@ class PlayerActionsTest {
         p.getBoard().getStorage().add(keep2);
         assertThat(p.getBoard().getStorage().isFull()).isTrue();
 
-        BoardSlot slot = new BoardSlot(1, 0);
-        Tile expectedTile = ctx.boardState().get(slot).get();
+        Tile expectedTile = ctx.board().depot(1).tileAt(0).get();
 
         Tile actualDiscarded = PlayerActions.replaceTileFromBoard(ctx, p, 1, 0, 1);
 
         assertThat(actualDiscarded).isEqualTo(discarded);
-        assertThat(ctx.boardState().hasTile(slot)).isFalse();
+        assertThat(ctx.board().depot(1).tileAt(0).isPresent()).isFalse();
         assertThat(p.getBoard().getStorage().view()).containsExactly(keep1, keep2, expectedTile);
     }
 
@@ -79,17 +76,17 @@ class PlayerActionsTest {
     @DisplayName("은화 2개를 내고 중앙 시장 타일을 구매한다")
     void buyTileFromCentralMarket() {
         GameContext ctx = simpleContext();
-        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         Player p = newPlayer();
         p.addSilver(2);
 
-        Tile expectedTile = ctx.boardState().centralMarket().get(0);
+        Tile expectedTile = ctx.board().centralMarket().get(0);
 
         PlayerActions.buyTileFromCentralMarket(ctx, p, 0);
 
         assertThat(p.getSilver()).isZero();
-        assertThat(ctx.boardState().centralMarket()).hasSize(7);
-        assertThat(ctx.boardState().centralMarket()).doesNotContain(expectedTile);
+        assertThat(ctx.board().centralMarket()).hasSize(7);
+        assertThat(ctx.board().centralMarket()).doesNotContain(expectedTile);
         assertThat(p.getBoard().getStorage().view()).containsExactly(expectedTile);
     }
 
@@ -97,7 +94,7 @@ class PlayerActionsTest {
     @DisplayName("저장소가 가득 차 있으면 하나 버리고 중앙 시장 타일을 구매한다")
     void replaceTileFromCentralMarketWhenStorageFull() {
         GameContext ctx = simpleContext();
-        ctx.boardState().fillCentralMarketFromSupply(ctx.tileSupplier());
+        ctx.board().refillCentralMarket(ctx.tileSupplier()::drawAny);
         Player p = newPlayer();
         p.addSilver(2);
 
@@ -108,13 +105,13 @@ class PlayerActionsTest {
         p.getBoard().getStorage().add(discarded);
         p.getBoard().getStorage().add(keep2);
 
-        Tile expectedTile = ctx.boardState().centralMarket().get(0);
+        Tile expectedTile = ctx.board().centralMarket().get(0);
 
         Tile actualDiscarded = PlayerActions.replaceTileFromCentralMarket(ctx, p, 0, 1);
 
         assertThat(actualDiscarded).isEqualTo(discarded);
         assertThat(p.getSilver()).isZero();
-        assertThat(ctx.boardState().centralMarket()).hasSize(7);
+        assertThat(ctx.board().centralMarket()).hasSize(7);
         assertThat(p.getBoard().getStorage().view()).containsExactly(keep1, keep2, expectedTile);
     }
 

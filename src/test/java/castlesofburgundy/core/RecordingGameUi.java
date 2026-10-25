@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 
@@ -53,7 +52,7 @@ final class RecordingGameUi implements GameUi {
     }
 
     @Override
-    public void showGameBoard(GameBoardLayout layout, BoardState boardState) {
+    public void showGameBoard(GameBoard board) {
     }
 
     @Override

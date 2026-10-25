@@ -1,7 +1,6 @@
 package castlesofburgundy.core;
 
-import castlesofburgundy.board.BoardState;
-import castlesofburgundy.board.GameBoardLayout;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
@@ -27,11 +26,10 @@ class TurnManagerTest {
     }
 
     private GameContext simpleContext(long diceSeed) {
-        GameBoardLayout layout = new GameBoardLayout();
         TileSupplier supplier = new TileSupplier(1L);
-        BoardState boardState = new BoardState(layout);
-        boardState.fillAllFromSupply(supplier);
-        return new GameContext(1L, layout, boardState, supplier, new Dice(diceSeed), new castlesofburgundy.goods.GoodsSupply(1L));
+        GameBoard board = new GameBoard();
+        board.refillDepots(supplier::draw);
+        return new GameContext(1L, board, supplier, new Dice(diceSeed), new castlesofburgundy.goods.GoodsSupply(1L));
     }
 
     private Player newPlayer() {
@@ -83,7 +81,7 @@ class TurnManagerTest {
         replaceAction.apply().getAsBoolean();
 
         assertThat(p.getBoard().getStorage().size()).isEqualTo(3);
-        assertThat(ctx.boardState().hasTile(new castlesofburgundy.board.BoardSlot(1, 0))).isFalse();
+        assertThat(ctx.board().depot(1).tileAt(0).isPresent()).isFalse();
     }
 
     @Test
@@ -135,7 +133,7 @@ class TurnManagerTest {
     @DisplayName("액션 선택지 전에 현재 타일 저장소와 상품 상태를 함께 보여준다")
     void playerTurnShowsCompactContextBeforeChoices() {
         GameContext ctx = simpleContext();
-        ctx.boardState().addGoods(3, GoodsColor.PINK);
+        ctx.board().depot(3).addGoods(GoodsColor.PINK);
         RecordingGameUi ui = new RecordingGameUi();
         ui.scriptChoices(0, 0);
         TurnManager tm = new TurnManager(ctx, ui, 2);

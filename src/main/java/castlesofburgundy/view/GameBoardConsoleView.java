@@ -1,6 +1,7 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.board.*;
+import castlesofburgundy.board.Depot;
+import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.tile.Tile;
 
 import java.util.*;
@@ -48,23 +49,14 @@ public final class GameBoardConsoleView {
                     """;
 
 
-    public static String render(GameBoardLayout layout, BoardState boardState) {
+    public static String render(GameBoard board) {
         StringBuilder sb = new StringBuilder();
         sb.append("=== Market Board  ===\n");
 
-        Map<Integer, SectionLayout> byId = new HashMap<>();
-        for (SectionLayout s : layout.getSections()) {
-            byId.put(s.getSectionId(), s);
-        }
-
-        int[] order = {1, 2, 3, 4, 5, 6};
-        Map<BoardSlot, Tile> snap = boardState.snapshot();
-
         // 섹션 박스 생성
         List<List<String>> boxes = new ArrayList<>();
-        for (int secId : order) {
-            SectionLayout sec = layout.getSection(secId);
-            boxes.add(renderSectionBox(sec, snap));
+        for (Depot depot : board.depots()) {
+            boxes.add(renderSectionBox(depot));
         }
 
         // 가로로 병합
@@ -77,23 +69,22 @@ public final class GameBoardConsoleView {
             }
             sb.append("\n");
         }
-        sb.append(renderCentralMarket(boardState.centralMarket()));
+        sb.append(renderCentralMarket(board.centralMarket()));
         return sb.toString();
     }
 
-    private static List<String> renderSectionBox(SectionLayout sec, Map<BoardSlot, Tile> grid) {
+    private static List<String> renderSectionBox(Depot depot) {
         List<String> out = new ArrayList<>();
         String border = "+---+------------+";
         out.add(padRight(border, BOX_W));
         out.add(padRight("|idx|  placed    |", BOX_W));
         out.add(padRight(border, BOX_W));
 
-        for (int i = 0; i < sec.getSlotTypes().size(); i++) {
-            BoardSlot slot = new BoardSlot(sec.getSectionId(), i);
+        for (int i = 0; i < depot.slotCount(); i++) {
 
             String idx = String.format("%3d", i);
             String placedStr;
-            Tile t = grid.get(slot);
+            Tile t = depot.tileAt(i).orElse(null);
             if (t != null) {
                 String inner = AsciiUtils.shortType(t.type());
                 String colored = COLORIZE ? AsciiUtils.colorizeInner(inner, t.type(), true) : inner;

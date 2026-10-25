@@ -339,7 +339,7 @@ public final class TurnManager {
 
             for (DieSetting setting : dieSettings(baseDie, player.getWorkers())) {
                 for (int cellId : player.getBoard().legalPlacements(animal, setting.adjustedDie())) {
-                    int score = animalScoreIfPlaced(player, animal, cellId);
+                    int score = animal.scoreIn(player.getBoard().placedTilesInRegion(cellId));
                     parts.add(setting.label() + " 주사위 " + setting.adjustedDie()
                             + " -> 저장소[" + storageIndex + "] "
                             + animal.species() + " x" + animal.count()
@@ -348,16 +348,6 @@ public final class TurnManager {
             }
         }
         return parts.isEmpty() ? "(없음)" : "\n- " + String.join("\n- ", parts);
-    }
-
-    private int animalScoreIfPlaced(Player player, AnimalTile animal, int cellId) {
-        int score = animal.count();
-        for (Tile placed : player.getBoard().placedTilesInRegion(cellId)) {
-            if (placed instanceof AnimalTile other && other.species() == animal.species()) {
-                score += other.count();
-            }
-        }
-        return score;
     }
 
     private List<DieSetting> dieSettings(int baseDie, int availableWorkers) {

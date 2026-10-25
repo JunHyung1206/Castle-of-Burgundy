@@ -5,7 +5,6 @@ import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BaseTile;
 import castlesofburgundy.tile.BuildingKind;
 import castlesofburgundy.tile.BuildingTile;
-import castlesofburgundy.tile.CastleTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 
@@ -39,10 +38,9 @@ public class TileSupplier {
     private Tile create(TileType type) {
         int id = nextId++;
         return switch (type) {
-            case CASTLE -> new CastleTile(id);
             case ANIMAL -> new AnimalTile(id, pick(AnimalSpecies.values()), 2 + random.nextInt(3)); // 2~4
             case BUILDING -> new BuildingTile(id, pick(BuildingKind.values()));
-            case MINE, SHIP, KNOWLEDGE -> BaseTile.of(type, id);
+            case CASTLE, MINE, SHIP, KNOWLEDGE -> BaseTile.of(type, id);
         };
     }
 

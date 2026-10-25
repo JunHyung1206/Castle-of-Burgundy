@@ -2,7 +2,6 @@ package castlesofburgundy.core;
 
 import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BuildingTile;
-import castlesofburgundy.tile.CastleTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 import org.junit.jupiter.api.DisplayName;
@@ -26,10 +25,10 @@ class TileSupplierTest {
     }
 
     @Test
-    @DisplayName("가축·건물·성은 각 타입의 전용 타일로 공급된다")
+    @DisplayName("가축·건물은 전용 타일로, 성은 CASTLE 타입 타일로 공급된다")
     void suppliesTypedTiles() {
         assertThat(supplier.draw(TileType.ANIMAL)).get().isInstanceOf(AnimalTile.class);
         assertThat(supplier.draw(TileType.BUILDING)).get().isInstanceOf(BuildingTile.class);
-        assertThat(supplier.draw(TileType.CASTLE)).get().isInstanceOf(CastleTile.class);
+        assertThat(supplier.draw(TileType.CASTLE)).get().extracting(Tile::type).isEqualTo(TileType.CASTLE);
     }
 }

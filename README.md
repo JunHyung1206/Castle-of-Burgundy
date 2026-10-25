@@ -130,8 +130,6 @@ castlesofburgundy
   │  ├─ PlayerActions.java         # 플레이어·개인 보드·공용 보드를 함께 바꾸는 액션(검증→차감→이동→효과)
   │  ├─ PlayerSetup.java           # 플레이어 이름/시작 성 위치 입력 및 초기 세팅
   │  ├─ TileSupplier.java          # 타입별 타일 풀 관리 + 무작위 공급
-  │  ├─ TileEffectContext.java     # 타일 효과 발동 시 컨텍스트(플레이어, 페이즈, 위치 등)
-  │  ├─ TilePlacementResult.java   # 타일 효과 결과(추가 행동/점수/일꾼/은화)
   │  └─ PlacementOutcome.java      # 배치 결과(구역 완성/추가 행동)를 호출부에 전달
   │
   ├─ board                         # 공용 보드(번호 창고 1~6 + 중앙 시장)
@@ -153,13 +151,12 @@ castlesofburgundy
   │  └─ Player.java                # 이름, 일꾼, 은화, 점수와 개인 보드를 가진 플레이어
   │
   ├─ tile                          # 타일 종류
-  │  ├─ Tile.java                  # 공통 인터페이스(type, id, onPlaced 효과)
-  │  ├─ BaseTile.java              # 기본 구현(효과 없는 일반 타일)
-  │  ├─ AnimalTile.java            # 가축 타일: 같은 농장/같은 종 보너스 점수
-  │  ├─ BuildingTile.java          # 건물 타일: 일부 즉시 효과
+  │  ├─ Tile.java                  # 공통 인터페이스(type, id). 배치 효과는 PlayerActions가 적용
+  │  ├─ BaseTile.java              # 종류 외 데이터가 없는 타일(성, 배, 광산, 지식)
+  │  ├─ AnimalTile.java            # 가축 타일: 종·마리 수, 같은 농장/같은 종 점수 계산
+  │  ├─ BuildingTile.java          # 건물 타일: 건물 종류
   │  ├─ BuildingKind.java          # 건물 8종 구분
   │  ├─ AnimalSpecies.java         # 가축 4종 구분
-  │  ├─ CastleTile.java            # 성 타일: 배치 시 추가 행동 1회 부여
   │  └─ TileType.java              # CASTLE, SHIP, MINE, ANIMAL, BUILDING, KNOWLEDGE
   │
   └─ view                          # 콘솔 출력(텍스트 UI)

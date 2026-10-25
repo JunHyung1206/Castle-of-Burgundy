@@ -6,7 +6,6 @@ import castlesofburgundy.player.Player;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.tile.BaseTile;
-import castlesofburgundy.tile.CastleTile;
 import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 import org.junit.jupiter.api.DisplayName;
@@ -121,7 +120,7 @@ class PlayerActionsTest {
         PersonalBoard pb = new PersonalBoard(new PersonalLayout());
         pb.setupInitialCastle(7); // 성 군집 {2,3,7}의 7번에서 시작
         Player p = new Player(pb, "p");
-        p.getBoard().getStorage().add(new CastleTile(99));
+        p.getBoard().getStorage().add(BaseTile.of(TileType.CASTLE, 99));
 
         // cell 2: CASTLE / die 5, 7번과 인접
         PlacementOutcome outcome = TestGames.actions(2).placeTileFromStorage(p, 0, 0, 2, 5, Phase.A);

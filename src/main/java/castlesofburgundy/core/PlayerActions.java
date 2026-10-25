@@ -5,6 +5,7 @@ import castlesofburgundy.goods.GoodsColor;
 import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.player.Storage;
+import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BuildingKind;
 import castlesofburgundy.tile.BuildingTile;
 import castlesofburgundy.tile.Tile;
@@ -77,8 +78,7 @@ public final class PlayerActions {
     }
 
     /**
-     * 저장소의 타일을 영지에 배치하고, 그에 따른 효과(구역 완성 점수, 타일 고유 효과,
-     * 배·건물의 선택형 효과)를 모두 적용한다.
+     * 저장소의 타일을 영지에 배치하고, 그에 따른 효과(구역 완성 점수, 타일 효과)를 모두 적용한다.
      *
      * @return 일어난 일(추가 행동 여부, 완성된 구역 크기/점수). 추가 행동 진행은 호출부가 한다.
      */
@@ -107,26 +107,15 @@ public final class PlayerActions {
             player.addScore(regionScore);
         }
 
-        // 2) 타일 고유 효과(즉시 수치)
-        TilePlacementResult tileResult = tile.onPlaced(new TileEffectContext(player, phase, cellId, dieUsed));
-        player.addScore(tileResult.bonusScore());
-        player.gainWorkers(tileResult.bonusWorkers());
-        player.addSilver(tileResult.bonusSilver());
-
-        // 3) 선택이 필요한 효과
-        if (tile.type() == TileType.SHIP) {
-            shipEffect(player);
-        }
-        if (tile instanceof BuildingTile building) {
-            buildingEffect(player, building.kind());
-        }
+        // 2) 타일 효과
+        boolean grantsExtraAction = applyPlacementEffect(player, tile, cellId);
 
         if (regionSize > 0) {
             ui.message("[구역 완성] " + player.getName()
                     + "이(가) 크기 " + regionSize
                     + " 구역을 완성했습니다! (+" + regionScore + "점, 페이즈 " + phase + ")");
         }
-        return new PlacementOutcome(tileResult.grantExtraAction(), regionSize, regionScore);
+        return new PlacementOutcome(grantsExtraAction, regionSize, regionScore);
     }
 
     public void takeWorkers(Player player) {
@@ -153,6 +142,25 @@ public final class PlayerActions {
 
     public int scoreForSelling(int count) {
         return count * playerCount;
+    }
+
+    /**
+     * 타일을 영지에 놓았을 때의 효과. 모든 타일 효과는 여기서만 적용한다.
+     * 광산은 페이즈 종료 때(PhaseRunner), 지식 타일 효과는 아직 미구현이다.
+     *
+     * @return 성처럼 추가 행동을 주면 true
+     */
+    private boolean applyPlacementEffect(Player player, Tile tile, int cellId) {
+        switch (tile) {
+            case AnimalTile animal -> player.addScore(animal.scoreIn(player.getBoard().placedTilesInRegion(cellId)));
+            case BuildingTile building -> buildingEffect(player, building.kind());
+            default -> {
+                if (tile.type() == TileType.SHIP) {
+                    shipEffect(player);
+                }
+            }
+        }
+        return tile.type() == TileType.CASTLE;
     }
 
     private void shipEffect(Player player) {
@@ -192,6 +200,9 @@ public final class PlayerActions {
 
     private void buildingEffect(Player player, BuildingKind kind) {
         switch (kind) {
+            case WATCHTOWER -> player.addScore(4);
+            case BANK -> player.addSilver(2);
+            case BOARDING_HOUSE -> player.gainWorkers(4);
             case MARKET -> takeBoardTileByBuildingEffect(player, EnumSet.of(TileType.SHIP, TileType.ANIMAL), "[시장]");
             case CARPENTER -> takeBoardTileByBuildingEffect(player, EnumSet.of(TileType.BUILDING), "[목수]");
             case CHURCH -> takeBoardTileByBuildingEffect(
@@ -200,7 +211,8 @@ public final class PlayerActions {
                     "[교회]"
             );
             case WAREHOUSE -> sellGoodsByWarehouse(player);
-            default -> {
+            case TOWN_HALL -> {
+                // 시청: 미구현
             }
         }
     }

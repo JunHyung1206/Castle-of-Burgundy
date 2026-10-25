@@ -1,7 +1,6 @@
 package castlesofburgundy.tile;
 
-import castlesofburgundy.core.TileEffectContext;
-import castlesofburgundy.core.TilePlacementResult;
+import java.util.List;
 
 /**
  * 가축 타일. 그려진 가축 수(count)가 곧 기본 승점이다.
@@ -37,14 +36,18 @@ public final class AnimalTile implements Tile {
         return count;
     }
 
-    @Override
-    public TilePlacementResult onPlaced(TileEffectContext ctx) {
+    /**
+     * 이 타일을 농장에 놓을 때 얻는 점수. 배치 직후 점수와 배치 전 미리보기 모두 이 계산을 쓴다.
+     *
+     * @param placedInPasture 같은 농장에 놓인 타일들(이 타일 자신이 포함돼 있어도 된다)
+     */
+    public int scoreIn(List<Tile> placedInPasture) {
         int score = count;
-        for (Tile t : ctx.placedTilesInSameRegion()) {
+        for (Tile t : placedInPasture) {
             if (t != this && t instanceof AnimalTile other && other.species == species) {
                 score += other.count;
             }
         }
-        return new TilePlacementResult(false, 0, 0, score);
+        return score;
     }
 }

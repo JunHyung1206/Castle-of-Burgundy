@@ -21,7 +21,7 @@ import java.util.List;
  * 선택이 들어오면 해당 실행 메서드(takeShipGoods 등)로 마무리한다. 진행 순서는 Game이 정한다.
  */
 final class PlayerActions {
-    private static final int CENTRAL_MARKET_COST = 2;
+    static final int CENTRAL_MARKET_COST = 2;
     private static final int WORKERS_PER_TAKE = 2;
     private static final int SALE_SILVER = 1;
 
@@ -189,6 +189,17 @@ final class PlayerActions {
             case WAREHOUSE -> new PlacementOutcome.FollowUp.WarehouseSale();
             case WATCHTOWER, BANK, BOARDING_HOUSE, TOWN_HALL -> new PlacementOutcome.FollowUp.None(); // 시청: 미구현
         };
+    }
+
+    /**
+     * 페이즈 종료 정산: 영지에 놓인 광산 1개당 은화 1개.
+     *
+     * @return 받은 은화
+     */
+    int payMines(Player player) {
+        int silver = player.getBoard().countPlacedOfType(TileType.MINE);
+        player.addSilver(silver);
+        return silver;
     }
 
     /** 배 효과로 고를 수 있는 창고: 상품이 쌓여 있는 번호 창고. */

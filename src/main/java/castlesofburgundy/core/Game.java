@@ -26,15 +26,12 @@ import castlesofburgundy.player.PersonalBoard;
 import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.BuildingKind;
-import castlesofburgundy.tile.Tile;
-import castlesofburgundy.tile.TileType;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 게임 한 판의 상태 기계. 진행 위치(페이즈·라운드·차례·남은 주사위)와 지금 기다리는 입력(pending)을 갖고,
@@ -47,12 +44,11 @@ public final class Game {
     private static final int MAX_PLAYERS = 4;
     private static final int STARTING_GOODS = 3;
     private static final int STARTING_SILVER = 1;
-    private static final int CENTRAL_MARKET_COST = 2;
-    private static final int MAX_WORKERS_PER_DIE = 3; // ±3은 같은 눈이라 3개면 모든 눈에 닿는다
 
     private final GameContext ctx;
     private final List<Player> players;
     private final PlayerActions actions;
+    private final ActionRules rules;
     private final List<GameEvent> events = new ArrayList<>();
 
     private Phase phase;
@@ -101,6 +97,7 @@ public final class Game {
         this.ctx = ctx;
         this.players = List.copyOf(players);
         this.actions = new PlayerActions(ctx, players.size());
+        this.rules = new ActionRules(ctx.board(), actions);
         ctx.board().turnOrder().seat(this.players);
     }
 
@@ -186,28 +183,9 @@ public final class Game {
 
     /** 지금 낼 수 있는 명령과 각각의 비용·즉시 이득. 순서는 화면의 메뉴 순서다. */
     public List<ActionOption> options() {
-        return availableActions().stream().map(this::option).toList();
-    }
-
-    private ActionOption option(Command command) {
-        Player player = currentPlayer();
-        return switch (command) {
-            case TakeTile t -> new ActionOption(command, workersFor(t.targetDie()), 0, 0, 0);
-            case PlaceTile p -> {
-                PlayerActions.Gain gain = actions.previewPlacement(player, p.storageIndex(), p.cellId(), phase);
-                yield new ActionOption(command, workersFor(p.targetDie()), 0, gain.score(), gain.silver());
-            }
-            case SellGoods s -> {
-                PlayerActions.Gain gain = actions.previewSale(player, GoodsColor.forDie(s.targetDie()));
-                yield new ActionOption(command, workersFor(s.targetDie()), 0, gain.score(), gain.silver());
-            }
-            case ChooseGoodsColor c -> {
-                PlayerActions.Gain gain = actions.previewSale(player, c.color());
-                yield new ActionOption(command, 0, 0, gain.score(), gain.silver());
-            }
-            case BuyCentralMarket b -> new ActionOption(command, 0, CENTRAL_MARKET_COST, 0, 0);
-            default -> new ActionOption(command, 0, 0, 0, 0);
-        };
+        return availableActions().stream()
+                .map(command -> rules.option(command, pending, currentPlayer(), phase))
+                .toList();
     }
 
     /** 마지막으로 읽은 뒤 일어난 일을 순서대로 돌려주고 비운다. */
@@ -217,155 +195,9 @@ public final class Game {
         return drained;
     }
 
-    /** 주사위 눈 from을 to로 바꾸는 데 드는 일꾼 수(1↔6을 잇는 원형 거리). */
-    static int workerCost(int from, int to) {
-        int distance = Math.abs(from - to);
-        return Math.min(distance, 6 - distance);
-    }
-
-    /**
-     * 일꾼 workers개 이하로 만들 수 있는 눈을 메뉴 순서(그대로, -1, +1, -2, +2, -3)로 돌려준다.
-     */
-    static List<Integer> reachableDice(int baseDie, int workers) {
-        List<Integer> dice = new ArrayList<>();
-        dice.add(baseDie);
-        int max = Math.min(MAX_WORKERS_PER_DIE, workers);
-        for (int used = 1; used <= max; used++) {
-            dice.add(wrapAdd(baseDie, -used));
-            if (used == MAX_WORKERS_PER_DIE) {
-                break;
-            }
-            dice.add(wrapAdd(baseDie, used));
-        }
-        return dice;
-    }
-
-    private static int wrapAdd(int face, int delta) {
-        return ((face - 1 + delta) % 6 + 6) % 6 + 1;
-    }
-
     /** 지금 낼 수 있는 명령 전부(options()의 명령과 같은 순서). apply가 이 목록으로 검증한다. */
     List<Command> availableActions() {
-        return switch (pending) {
-            case ChooseDie d -> d.remainingDice().stream().distinct().<Command>map(UseDie::new).toList();
-            case ChooseDieAction d -> dieActions(d.die());
-            case ChooseCastleAction c -> castleActions();
-            case ChooseShipDepot s -> actions.depotsWithGoods().stream()
-                    .<Command>map(depot -> new ChooseDepotGoods(depot.number()))
-                    .toList();
-            case ChooseBuildingTile b -> boardTileChoices(b.allowedTypes());
-            case ChooseGoodsToSell g -> goodsColorChoices();
-            case OfferCentralMarket o -> {
-                List<Command> options = new ArrayList<>();
-                options.add(new EndTurn());
-                options.addAll(purchaseActions());
-                yield options;
-            }
-            case GameOver g -> List.of();
-        };
-    }
-
-    private List<Command> dieActions(int baseDie) {
-        List<Command> options = new ArrayList<>();
-        for (int die : reachableDice(baseDie, currentPlayer().getWorkers())) {
-            options.addAll(actionsForDie(die));
-        }
-        options.addAll(purchaseActions());
-        options.add(new TakeWorkers());
-        return options;
-    }
-
-    private List<Command> castleActions() {
-        List<Command> options = new ArrayList<>();
-        for (int die = 1; die <= 6; die++) {
-            options.addAll(actionsForDie(die));
-        }
-        return options;
-    }
-
-    /** 주사위 눈 하나로 할 수 있는 행동: 그 번호 창고에서 가져오기, 그 눈 칸에 배치, 그 색 판매. */
-    private List<Command> actionsForDie(int die) {
-        Player player = currentPlayer();
-        List<Command> options = new ArrayList<>();
-
-        Depot depot = board().depot(die);
-        for (int slot = 0; slot < depot.slotCount(); slot++) {
-            if (depot.tileAt(slot).isEmpty()) {
-                continue;
-            }
-            for (Integer discard : discardChoices(player)) {
-                options.add(new TakeTile(die, slot, discard));
-            }
-        }
-
-        List<Tile> stored = player.getBoard().getStorage().view();
-        for (int storageIndex = 0; storageIndex < stored.size(); storageIndex++) {
-            for (int cellId : player.getBoard().legalPlacements(stored.get(storageIndex), die)) {
-                options.add(new PlaceTile(die, storageIndex, cellId));
-            }
-        }
-
-        if (player.getBoard().getGoods().count(GoodsColor.forDie(die)) > 0) {
-            options.add(new SellGoods(die));
-        }
-        return options;
-    }
-
-    private List<Command> purchaseActions() {
-        Player player = currentPlayer();
-        if (!turn.canBuyFromCentralMarket() || player.getSilver() < CENTRAL_MARKET_COST) {
-            return List.of();
-        }
-        List<Command> options = new ArrayList<>();
-        for (int marketIndex = 0; marketIndex < board().centralMarket().size(); marketIndex++) {
-            for (Integer discard : discardChoices(player)) {
-                options.add(new BuyCentralMarket(marketIndex, discard));
-            }
-        }
-        return options;
-    }
-
-    private List<Command> boardTileChoices(Set<TileType> allowedTypes) {
-        Player player = currentPlayer();
-        List<Command> options = new ArrayList<>();
-        for (Depot depot : board().depots()) {
-            for (int slot = 0; slot < depot.slotCount(); slot++) {
-                boolean allowed = depot.tileAt(slot).map(tile -> allowedTypes.contains(tile.type())).orElse(false);
-                if (!allowed) {
-                    continue;
-                }
-                for (Integer discard : discardChoices(player)) {
-                    options.add(new ChooseBoardTile(depot.number(), slot, discard));
-                }
-            }
-        }
-        return options;
-    }
-
-    private List<Command> goodsColorChoices() {
-        Player player = currentPlayer();
-        List<Command> options = new ArrayList<>();
-        for (GoodsColor color : GoodsColor.values()) {
-            if (player.getBoard().getGoods().count(color) > 0) {
-                options.add(new ChooseGoodsColor(color));
-            }
-        }
-        return options;
-    }
-
-    /** 저장소에 자리가 있으면 버릴 필요가 없고(null), 가득 찼으면 버릴 칸마다 선택지가 생긴다. */
-    private static List<Integer> discardChoices(Player player) {
-        int size = player.getBoard().getStorage().size();
-        if (!player.getBoard().getStorage().isFull()) {
-            List<Integer> keepAll = new ArrayList<>();
-            keepAll.add(null);
-            return keepAll;
-        }
-        List<Integer> indexes = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            indexes.add(i);
-        }
-        return indexes;
+        return isOver() ? List.of() : rules.commands(pending, currentPlayer(), turn);
     }
 
     // ===== 명령 실행 =====
@@ -444,12 +276,8 @@ public final class Game {
         }
     }
 
-    /** 성 추가 행동은 원하는 눈을 고르는 것이라 일꾼이 들지 않는다. */
     private int workersFor(int targetDie) {
-        if (pending instanceof ChooseDieAction d) {
-            return workerCost(d.die(), targetDie);
-        }
-        return 0;
+        return ActionRules.workersFor(pending, targetDie);
     }
 
     private void handlePlacement(Player player, PlacementOutcome outcome) {
@@ -470,7 +298,7 @@ public final class Game {
                 }
             }
             case PlacementOutcome.FollowUp.BoardTile b -> {
-                if (boardTileChoices(b.allowedTypes()).isEmpty()) {
+                if (rules.boardTileChoices(player, b.allowedTypes()).isEmpty()) {
                     events.add(new GameEvent.BuildingEffectSkipped(b.kind()));
                     finishPlacement();
                 } else {
@@ -478,7 +306,7 @@ public final class Game {
                 }
             }
             case PlacementOutcome.FollowUp.WarehouseSale w -> {
-                if (goodsColorChoices().isEmpty()) {
+                if (rules.goodsColorChoices(player).isEmpty()) {
                     events.add(new GameEvent.BuildingEffectSkipped(BuildingKind.WAREHOUSE));
                     finishPlacement();
                 } else {
@@ -507,7 +335,7 @@ public final class Game {
     private void completeAction(boolean grantsExtraAction) {
         events.add(new GameEvent.ActionCompleted());
         if (grantsExtraAction) {
-            if (!castleActions().isEmpty()) {
+            if (!rules.castleActions(currentPlayer()).isEmpty()) {
                 pending = new ChooseCastleAction();
                 return;
             }
@@ -529,7 +357,7 @@ public final class Game {
             }
             return;
         }
-        if (!purchaseActions().isEmpty()) {
+        if (!rules.purchaseActions(currentPlayer(), turn).isEmpty()) {
             pending = new OfferCentralMarket();
             return;
         }
@@ -586,13 +414,12 @@ public final class Game {
         continueTurn();
     }
 
-    /** 페이즈 종료 정산: 영지에 놓인 광산 1개당 은화 1개를 받는다. */
+    /** 페이즈 종료: 정산(광산 등)은 PlayerActions가 정하고, 여기서는 순서만 진행한다. */
     private void endPhase() {
         for (Player player : board().turnOrder().currentOrder()) {
-            int mines = player.getBoard().countPlacedOfType(TileType.MINE);
-            if (mines > 0) {
-                player.addSilver(mines);
-                events.add(new GameEvent.MinesPaid(seatOf(player), mines));
+            int silver = actions.payMines(player);
+            if (silver > 0) {
+                events.add(new GameEvent.MinesPaid(seatOf(player), silver));
             }
         }
         events.add(new GameEvent.PhaseEnded(phase));

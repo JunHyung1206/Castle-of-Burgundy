@@ -243,4 +243,27 @@ class PlayerActionsTest {
 
         assertThat(p.getWorkers()).isEqualTo(2);
     }
+
+    @Test
+    @DisplayName("페이즈 종료 정산: 영지의 광산 1개당 은화 1개를 받는다")
+    void payMines() {
+        Player p = newPlayer(); // 시작 성 19
+        // 광산 {25(die4), 30(die1)}을 성에서부터 연결해 둔다
+        p.getBoard().place(25, BaseTile.of(TileType.MINE, 1), 4);
+        p.getBoard().place(30, BaseTile.of(TileType.MINE, 2), 1);
+
+        int silver = TestGames.actions(2).payMines(p);
+
+        assertThat(silver).isEqualTo(2);
+        assertThat(p.getSilver()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("광산이 없으면 페이즈 종료 정산도 없다")
+    void payNoMines() {
+        Player p = newPlayer();
+
+        assertThat(TestGames.actions(2).payMines(p)).isZero();
+        assertThat(p.getSilver()).isZero();
+    }
 }

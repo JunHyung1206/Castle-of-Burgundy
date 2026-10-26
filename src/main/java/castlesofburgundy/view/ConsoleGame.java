@@ -1,11 +1,11 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.core.Command;
+import castlesofburgundy.core.ActionOption;
 import castlesofburgundy.core.Decision;
 import castlesofburgundy.core.Game;
 import castlesofburgundy.core.GameEvent;
-import castlesofburgundy.goods.GoodsColor;
-import castlesofburgundy.player.Player;
+import castlesofburgundy.core.GameState;
+import castlesofburgundy.core.GameState.PlayerState;
 import castlesofburgundy.tile.BuildingKind;
 import castlesofburgundy.tile.Tile;
 
@@ -46,25 +46,28 @@ public final class ConsoleGame {
         printEvents(game);
 
         while (!game.isOver()) {
-            writeStatus(game);
+            GameState state = game.state();
             Decision decision = game.pending();
-            printHeader(game, decision);
+            List<ActionOption> options = game.options();
+            writeStatus(state, decision, options);
+            printHeader(state, decision);
 
-            Command command = choose(CommandMenu.build(game));
-            String line = executedLine(decision, CommandText.describe(game, decision, command));
+            ActionOption chosen = choose(CommandMenu.build(state, decision, options), options);
+            String line = executedLine(decision, CommandText.describe(state, decision, chosen.command(), chosen.workerCost()));
             if (line != null) {
                 executedLine = line; // 효과의 대상 고르기는 앞서 고른 행동의 줄을 덮지 않는다
             }
 
-            game.apply(command);
+            game.apply(chosen.command());
             printEvents(game);
         }
-        writeStatus(game);
+        GameState finalState = game.state();
+        writeStatus(finalState, game.pending(), List.of());
 
         out.println("\n=== 최종 게임 보드 ===");
-        out.println(GameBoardConsoleView.render(game.board()));
-        for (Player player : game.players()) {
-            out.println("\n=== 최종 플레이어 보드 (" + player.getName() + ") ===");
+        out.println(GameBoardConsoleView.render(finalState.board()));
+        for (PlayerState player : finalState.players()) {
+            out.println("\n=== 최종 플레이어 보드 (" + player.name() + ") ===");
             out.println(PlayerConsoleView.render(player));
         }
     }
@@ -96,7 +99,7 @@ public final class ConsoleGame {
     }
 
     /** 단계 메뉴를 따라 내려가 명령 하나를 고른다. 첫 단계가 아니면 b로 한 단계 위로 돌아간다. */
-    private Command choose(List<CommandMenu.Item> top) {
+    private ActionOption choose(List<CommandMenu.Item> top, List<ActionOption> options) {
         Deque<List<CommandMenu.Item>> parents = new ArrayDeque<>();
         List<CommandMenu.Item> items = top;
         while (true) {
@@ -115,7 +118,7 @@ public final class ConsoleGame {
             }
             switch (items.get(choice)) {
                 case CommandMenu.Leaf leaf -> {
-                    return leaf.command();
+                    return options.stream().filter(option -> option.command().equals(leaf.command())).findFirst().orElseThrow();
                 }
                 case CommandMenu.Group group -> {
                     parents.push(items);
@@ -146,9 +149,9 @@ public final class ConsoleGame {
     }
 
     /** 상태 화면은 보조 수단이라, 쓰지 못해도 게임은 계속하고 한 번만 알린다. */
-    private void writeStatus(Game game) {
+    private void writeStatus(GameState state, Decision pending, List<ActionOption> options) {
         try {
-            statusFile.write(game);
+            statusFile.write(state, pending, options);
         } catch (IOException e) {
             if (!statusFileFailed) {
                 out.println("[알림] 상태 파일을 쓰지 못했습니다: " + e.getMessage());
@@ -159,11 +162,11 @@ public final class ConsoleGame {
 
     // ===== 선택 화면 =====
 
-    private void printHeader(Game game, Decision decision) {
+    private void printHeader(GameState state, Decision decision) {
         switch (decision) {
             case Decision.ChooseDie d ->
                     out.println("\n사용할 주사위를 고르세요. (남은 주사위: " + d.remainingDice() + ")");
-            case Decision.ChooseDieAction d -> out.println(compactStatus(game.currentPlayer()));
+            case Decision.ChooseDieAction d -> out.println(compactStatus(state.current()));
             case Decision.ChooseCastleAction c -> out.println("\n[성 효과] 추가로 한 번 더 행동할 수 있습니다.");
             case Decision.OfferCentralMarket o -> out.println("\n[턴 종료 전] 중앙 시장에서 한 번 구매할 수 있습니다.");
             case Decision.ChooseShipDepot s -> out.println("[배] 상품을 가져올 창고를 고르세요.");
@@ -176,20 +179,15 @@ public final class ConsoleGame {
     }
 
     /** 행동을 고를 때 필요한 것만 한 줄로. 자세한 요약은 상태 파일에 있다. */
-    private static String compactStatus(Player player) {
+    private static String compactStatus(PlayerState player) {
         List<String> stored = new ArrayList<>();
-        List<Tile> tiles = player.getBoard().getStorage().view();
+        List<Tile> tiles = player.storage();
         for (int i = 0; i < tiles.size(); i++) {
             stored.add("#" + i + "=" + tiles.get(i).type());
         }
         List<String> goods = new ArrayList<>();
-        for (GoodsColor color : GoodsColor.values()) {
-            int count = player.getBoard().getGoods().count(color);
-            if (count > 0) {
-                goods.add(color + "=" + count);
-            }
-        }
-        return "일꾼 " + player.getWorkers() + " · 은화 " + player.getSilver() + " · 점수 " + player.getScore()
+        player.goods().forEach((color, count) -> goods.add(color + "=" + count));
+        return "일꾼 " + player.workers() + " · 은화 " + player.silver() + " · 점수 " + player.score()
                 + " · 저장소 " + (stored.isEmpty() ? "(비어 있음)" : String.join(", ", stored))
                 + " · 상품 " + (goods.isEmpty() ? "(없음)" : String.join(", ", goods));
     }
@@ -207,12 +205,14 @@ public final class ConsoleGame {
     // ===== 일어난 일 =====
 
     private void printEvents(Game game) {
-        for (GameEvent event : game.drainEvents()) {
-            print(event);
+        List<GameEvent> events = game.drainEvents();
+        GameState state = game.state();
+        for (GameEvent event : events) {
+            print(state, event);
         }
     }
 
-    private void print(GameEvent event) {
+    private void print(GameState state, GameEvent event) {
         switch (event) {
             case GameEvent.PhaseStarted e -> {
                 out.println("\n================================");
@@ -224,7 +224,7 @@ public final class ConsoleGame {
                 out.println("흰 주사위 " + e.whiteDie() + " → 창고 " + e.whiteDie() + "에 상품(" + e.goods() + ") 배치");
             }
             case GameEvent.TurnStarted e -> {
-                out.println("\n===" + e.player().getName() + "의 턴 ===");
+                out.println("\n===" + state.player(e.seat()).name() + "의 턴 ===");
                 out.println("굴린 주사위: " + e.die1() + ", " + e.die2());
             }
             case GameEvent.DieActionStarted e ->
@@ -239,13 +239,13 @@ public final class ConsoleGame {
             }
             case GameEvent.ShipFoundNoGoods e -> out.println("[배] 가져올 상품이 있는 창고가 없습니다.");
             case GameEvent.TurnOrderAdvanced e ->
-                    out.println("[다리] " + e.player().getName() + "의 턴 순서 토큰이 앞으로 이동했습니다.");
+                    out.println("[다리] " + state.player(e.seat()).name() + "의 턴 순서 토큰이 앞으로 이동했습니다.");
             case GameEvent.BuildingEffectSkipped e -> out.println(e.kind() == BuildingKind.WAREHOUSE
                     ? "[창고] 판매할 상품이 없습니다."
                     : CommandText.buildingLabel(e.kind()) + " 가져올 수 있는 타일이 없습니다.");
             case GameEvent.BuildingTileTaken e ->
                     out.println(CommandText.buildingLabel(e.kind()) + " 효과를 실행했습니다.");
-            case GameEvent.RegionCompleted e -> out.println("[구역 완성] " + e.player().getName()
+            case GameEvent.RegionCompleted e -> out.println("[구역 완성] " + state.player(e.seat()).name()
                     + "이(가) 크기 " + e.size()
                     + " 구역을 완성했습니다! (+" + e.score() + "점, 페이즈 " + e.phase() + ")");
             case GameEvent.ActionCompleted e -> {
@@ -257,7 +257,7 @@ public final class ConsoleGame {
             case GameEvent.CastleActionUnavailable e ->
                     out.println("\n[성 효과] 추가 행동이 가능하지만 현재 가능한 선택지가 없습니다.");
             case GameEvent.MinesPaid e ->
-                    out.println(e.player().getName() + ": 광산 " + e.silver() + "개 → 은화 +" + e.silver());
+                    out.println(state.player(e.seat()).name() + ": 광산 " + e.silver() + "개 → 은화 +" + e.silver());
             case GameEvent.PhaseEnded e -> out.println("\n=== Phase " + e.phase() + " 종료 ===");
             case GameEvent.GameEnded e -> out.println("\n=== 모든 페이즈 종료 ===");
         }

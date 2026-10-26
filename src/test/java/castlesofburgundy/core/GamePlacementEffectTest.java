@@ -50,8 +50,8 @@ class GamePlacementEffectTest {
         assertThat(p2.getBoard().getGoods().count(GoodsColor.PINK)).isEqualTo(1);
         assertThat(game.board().turnOrder().currentOrder()).containsExactly(p2, p1);
         assertThat(game.drainEvents()).startsWith(
-                new GameEvent.ShipGoodsTaken(p2, 2, 2, 0),
-                new GameEvent.TurnOrderAdvanced(p2),
+                new GameEvent.ShipGoodsTaken(1, 2, 2, 0),
+                new GameEvent.TurnOrderAdvanced(1),
                 new GameEvent.ActionCompleted());
     }
 
@@ -68,7 +68,7 @@ class GamePlacementEffectTest {
 
         assertThat(game.pending()).isEqualTo(new Decision.ChooseDieAction(5));
         assertThat(game.drainEvents()).startsWith(
-                new GameEvent.ShipFoundNoGoods(player), new GameEvent.TurnOrderAdvanced(player));
+                new GameEvent.ShipFoundNoGoods(0), new GameEvent.TurnOrderAdvanced(0));
     }
 
     @Test
@@ -129,7 +129,7 @@ class GamePlacementEffectTest {
         assertThat(player.getBoard().getGoods().count(GoodsColor.RED)).isZero();
         assertThat(player.getSilver()).isEqualTo(1);
         assertThat(player.getScore()).isEqualTo(4);
-        assertThat(game.drainEvents()).contains(new GameEvent.GoodsSold(player, GoodsColor.RED, 2, 4, true));
+        assertThat(game.drainEvents()).contains(new GameEvent.GoodsSold(0, GoodsColor.RED, 2, 4, true));
     }
 
     @Test
@@ -165,7 +165,7 @@ class GamePlacementEffectTest {
         game.apply(new PlaceTile(5, 0, 2));
 
         assertThat(game.pending()).isEqualTo(new Decision.ChooseDieAction(5));
-        assertThat(game.drainEvents()).contains(new GameEvent.CastleActionUnavailable(player));
+        assertThat(game.drainEvents()).contains(new GameEvent.CastleActionUnavailable(0));
     }
 
     @Test
@@ -183,6 +183,6 @@ class GamePlacementEffectTest {
 
         assertThat(player.getScore()).isEqualTo(16); // 페이즈 A(10) + 크기 3(6)
         assertThat(game.drainEvents()).startsWith(
-                new GameEvent.RegionCompleted(player, 3, 16, Phase.A), new GameEvent.ActionCompleted());
+                new GameEvent.RegionCompleted(0, 3, 16, Phase.A), new GameEvent.ActionCompleted());
     }
 }

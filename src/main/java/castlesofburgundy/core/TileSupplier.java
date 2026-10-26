@@ -18,7 +18,7 @@ import java.util.Random;
  * TODO(수도원): KNOWLEDGE는 고유 효과 26종(대략 1장씩)이라, 구현 시 유한 고유 덱
  * (정해진 셋에서 중복 없이 뽑기)으로 바꿔야 한다. 그때는 draw가 Optional.empty를 줄 수 있다.
  */
-public class TileSupplier {
+class TileSupplier {
     private final Random random;
     private int nextId = 0;
 

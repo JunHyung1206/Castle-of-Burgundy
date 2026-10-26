@@ -1,11 +1,9 @@
 package castlesofburgundy.view;
 
+import castlesofburgundy.core.ActionOption;
 import castlesofburgundy.core.Command;
 import castlesofburgundy.core.Decision;
-import castlesofburgundy.core.Game;
-import castlesofburgundy.goods.GoodsColor;
-import castlesofburgundy.player.Player;
-import castlesofburgundy.tile.AnimalTile;
+import castlesofburgundy.core.GameState;
 import castlesofburgundy.tile.Tile;
 
 import java.util.ArrayList;
@@ -15,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Game.availableActions()를 단계 메뉴로 묶는다: 행동 종류 → 대상 → (저장소가 가득 찼으면) 버릴 칸.
+ * Game.options()를 단계 메뉴로 묶는다: 행동 종류 → 대상 → (저장소가 가득 찼으면) 버릴 칸.
  * 보기가 하나뿐인 단계는 건너뛰어, 짧은 선택은 한 번에 끝난다. 모든 명령은 정확히 한 번씩 메뉴 끝(Leaf)에 나온다.
  */
 final class CommandMenu {
@@ -63,20 +61,18 @@ final class CommandMenu {
         }
     }
 
-    static List<Item> build(Game game) {
-        Decision decision = game.pending();
-
+    static List<Item> build(GameState state, Decision decision, List<ActionOption> options) {
         // 1) 버릴 칸만 다른 명령을 대상 하나로 묶는다
-        Map<Command, List<Command>> byTarget = new LinkedHashMap<>();
-        for (Command command : game.availableActions()) {
-            byTarget.computeIfAbsent(withoutDiscard(command), key -> new ArrayList<>()).add(command);
+        Map<Command, List<ActionOption>> byTarget = new LinkedHashMap<>();
+        for (ActionOption option : options) {
+            byTarget.computeIfAbsent(withoutDiscard(option.command()), key -> new ArrayList<>()).add(option);
         }
 
         // 2) 대상을 행동 종류로 묶는다
         Map<Kind, List<Item>> byKind = new EnumMap<>(Kind.class);
-        for (Map.Entry<Command, List<Command>> entry : byTarget.entrySet()) {
+        for (Map.Entry<Command, List<ActionOption>> entry : byTarget.entrySet()) {
             byKind.computeIfAbsent(Kind.of(entry.getKey()), key -> new ArrayList<>())
-                    .add(targetItem(game, decision, entry.getKey(), entry.getValue()));
+                    .add(targetItem(state, decision, entry.getKey(), entry.getValue()));
         }
 
         if (byKind.size() == 1) {
@@ -93,35 +89,32 @@ final class CommandMenu {
     }
 
     /** 대상 하나: 버릴 칸 선택이 없으면 바로 실행, 있으면 버릴 칸을 고르는 단계로. */
-    private static Item targetItem(Game game, Decision decision, Command target, List<Command> variants) {
-        String label = CommandText.describe(game, decision, target) + gain(game, target);
-        if (variants.size() == 1 && variants.get(0).equals(target)) {
+    private static Item targetItem(GameState state, Decision decision, Command target, List<ActionOption> variants) {
+        ActionOption first = variants.get(0);
+        String label = CommandText.describe(state, decision, target, first.workerCost()) + gain(first);
+        if (variants.size() == 1 && first.command().equals(target)) {
             return new Leaf(label, target);
         }
 
-        Player player = game.currentPlayer();
         List<Item> discards = new ArrayList<>();
-        for (Command variant : variants) {
-            int discardIndex = discardIndex(variant);
-            Tile discarded = CommandText.storedTile(player, discardIndex);
-            discards.add(new Leaf("저장소[" + discardIndex + "] " + discarded.type() + " 버리기", variant));
+        for (ActionOption variant : variants) {
+            int discardIndex = discardIndex(variant.command());
+            Tile discarded = CommandText.storedTile(state.current(), discardIndex);
+            discards.add(new Leaf("저장소[" + discardIndex + "] " + discarded.type() + " 버리기", variant.command()));
         }
         return new Group(label + " - 저장소가 가득 차 버릴 칸 선택", discards);
     }
 
-    /** 고르기 전에 알면 좋은 이득: 판매 점수, 가축 배치 점수. (예전 상태 요약의 "판매 가능", "동물 점수 후보") */
-    private static String gain(Game game, Command command) {
-        Player player = game.currentPlayer();
-        return switch (command) {
-            case Command.SellGoods s -> {
-                int count = player.getBoard().getGoods().count(GoodsColor.forDie(s.targetDie()));
-                yield " → 은화 +1, 점수 +" + game.scoreForSelling(count);
-            }
-            case Command.PlaceTile p -> CommandText.storedTile(player, p.storageIndex()) instanceof AnimalTile animal
-                    ? " → 점수 +" + animal.scoreIn(player.getBoard().placedTilesInRegion(p.cellId()))
-                    : "";
-            default -> "";
-        };
+    /** 고르기 전에 알 수 있는 이득(Game이 계산한 값): 판매, 구역 완성·가축·망루·은행 배치. */
+    private static String gain(ActionOption option) {
+        List<String> parts = new ArrayList<>();
+        if (option.silverGain() > 0) {
+            parts.add("은화 +" + option.silverGain());
+        }
+        if (option.scoreGain() > 0) {
+            parts.add("점수 +" + option.scoreGain());
+        }
+        return parts.isEmpty() ? "" : " → " + String.join(", ", parts);
     }
 
     private static Command withoutDiscard(Command command) {

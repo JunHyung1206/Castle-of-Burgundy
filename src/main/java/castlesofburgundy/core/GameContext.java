@@ -3,7 +3,7 @@ package castlesofburgundy.core;
 import castlesofburgundy.board.GameBoard;
 import castlesofburgundy.goods.GoodsSupply;
 
-public record GameContext(
+record GameContext(
         long seed,
         GameBoard board,
         TileSupplier tileSupplier,

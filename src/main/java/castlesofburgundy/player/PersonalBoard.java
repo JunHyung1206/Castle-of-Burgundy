@@ -52,6 +52,11 @@ public final class PersonalBoard {
         return placed.containsKey(cellId);
     }
 
+    /** 영지에 놓인 타일 전체(읽기 전용 복사본): 칸 번호 → 타일. */
+    public Map<Integer, Tile> placedTiles() {
+        return Map.copyOf(placed);
+    }
+
     public Optional<Tile> getPlacedTile(int cellId) {
         return Optional.ofNullable(placed.get(cellId));
     }
@@ -176,6 +181,20 @@ public final class PersonalBoard {
             }
         }
         return result;
+    }
+
+    /** 비어 있는 cellId에 타일을 놓으면 완성될 구역의 크기. 놓아도 완성되지 않으면 0. */
+    public int regionSizeCompletedBy(int cellId) {
+        if (isOccupied(cellId)) {
+            return 0;
+        }
+        Set<Integer> region = sameTypeRegion(cellId);
+        for (int id : region) {
+            if (id != cellId && !placed.containsKey(id)) {
+                return 0;
+            }
+        }
+        return region.size();
     }
 
     public int completedRegionSizeIfAny(int startCellId) {

@@ -1,8 +1,9 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.core.Game;
+import castlesofburgundy.core.ActionOption;
+import castlesofburgundy.core.Command;
+import castlesofburgundy.core.GameState;
 import castlesofburgundy.goods.GoodsColor;
-import castlesofburgundy.player.Player;
 import castlesofburgundy.tile.AnimalSpecies;
 import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.BaseTile;
@@ -11,49 +12,47 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TurnContextViewTest {
 
-    private final Game game = Game.start(42L, List.of("P1", "P2"));
-    private final Player player = game.currentPlayer();
-
     @Test
-    @DisplayName("행동을 고르기 전에 타일 저장소, 보유 상품, 창고 상품을 함께 보여준다")
+    @DisplayName("타일 저장소, 보유 상품, 창고 상품을 함께 보여준다")
     void showsStorageAndGoods() {
-        player.getBoard().getStorage().add(BaseTile.of(TileType.SHIP, 100));
+        GameState state = ViewFixtures.state(ViewFixtures.player(0, "P1",
+                List.of(BaseTile.of(TileType.SHIP, 100)), Map.of(GoodsColor.RED, 2), Map.of()));
 
-        String rendered = TurnContextView.render(game, 1);
+        String rendered = TurnContextView.render(state, List.of());
 
-        assertThat(rendered).contains("[현재 상태]", "타일 저장소: #0=SHIP(100)", "보유 상품", "창고 상품");
+        assertThat(rendered).contains("[현재 상태]", "타일 저장소: #0=SHIP(100)", "보유 상품: RED=2", "창고 상품");
     }
 
     @Test
-    @DisplayName("현재 주사위와 일꾼으로 팔 수 있는 상품을 점수와 함께 보여준다")
-    void showsSellableGoods() {
-        for (GoodsColor color : GoodsColor.values()) {
-            player.getBoard().getGoods().sell(color); // 시작 상품(무작위 3개)을 비워 3색 제한을 피한다
-        }
-        player.getBoard().getGoods().add(GoodsColor.TEAL);
+    @DisplayName("팔 수 있는 상품은 Game이 계산한 일꾼 비용과 점수로 보여준다")
+    void showsSellableGoodsFromOptions() {
+        GameState state = ViewFixtures.state(ViewFixtures.player(0, "P1", List.of(), Map.of(GoodsColor.TEAL, 1), Map.of()));
+        List<ActionOption> options = List.of(new ActionOption(new Command.SellGoods(6), 1, 0, 3, 1));
 
-        String rendered = TurnContextView.render(game, 6);
+        String rendered = TurnContextView.render(state, options);
 
-        assertThat(rendered).contains("판매 가능", "현재 주사위 6 -> TEAL");
+        assertThat(rendered).contains("일꾼 1개 사용 주사위 6 -> TEAL 1개 판매 가능 (+은화 1, +3점)");
     }
 
     @Test
-    @DisplayName("저장소의 가축 타일을 놓을 수 있는 칸과 얻을 점수를 보여준다")
-    void showsAnimalScoreCandidates() {
-        AnimalTile sheep = new AnimalTile(100, AnimalSpecies.SHEEP, 3);
-        player.getBoard().getStorage().add(sheep);
-        // cell 28(ANIMAL/die2)은 성(19) → 20 → 21을 거쳐야 인접하므로 배 칸 둘을 먼저 채운다
-        player.getBoard().place(20, BaseTile.of(TileType.SHIP, 1), 5);
-        player.getBoard().place(21, BaseTile.of(TileType.SHIP, 2), 4);
-        int cell = 28;
+    @DisplayName("가축 배치 후보는 저장소 칸 순서대로 Game이 계산한 점수로 보여준다")
+    void showsAnimalCandidatesFromOptions() {
+        GameState state = ViewFixtures.state(ViewFixtures.player(0, "P1",
+                List.of(BaseTile.of(TileType.SHIP, 1), new AnimalTile(100, AnimalSpecies.SHEEP, 3)), Map.of(), Map.of()));
+        List<ActionOption> options = List.of(
+                new ActionOption(new Command.PlaceTile(5, 0, 20), 0, 0, 0, 0),
+                new ActionOption(new Command.PlaceTile(2, 1, 28), 0, 0, 8, 0));
 
-        String rendered = TurnContextView.render(game, 2);
+        String rendered = TurnContextView.render(state, options);
 
-        assertThat(rendered).contains("동물 점수 후보", "저장소[0] SHEEP x3", "cell " + cell + " 배치 시 +3점");
+        assertThat(rendered)
+                .contains("현재 주사위 2 -> 저장소[1] SHEEP x3 cell 28 배치 시 +8점")
+                .doesNotContain("저장소[0] SHIP");
     }
 }

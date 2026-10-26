@@ -19,7 +19,7 @@ class StatusFileTest {
         Game game = Game.start(42L, List.of("Alice", "Bob"));
         StatusFile statusFile = new StatusFile(dir.resolve("status.txt"));
 
-        statusFile.write(game);
+        statusFile.write(game.state(), game.pending(), game.options());
 
         String written = Files.readString(dir.resolve("status.txt"));
         assertThat(written).contains(
@@ -37,8 +37,9 @@ class StatusFileTest {
     void overwrites(@TempDir Path dir) throws Exception {
         Path path = dir.resolve("status.txt");
         Files.writeString(path, "old");
+        Game game = Game.start(1L, List.of("P1"));
 
-        new StatusFile(path).write(Game.start(1L, List.of("P1")));
+        new StatusFile(path).write(game.state(), game.pending(), game.options());
 
         assertThat(Files.readString(path)).doesNotContain("old").contains("차례: P1");
     }

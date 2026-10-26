@@ -1,6 +1,8 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.player.*;
+import castlesofburgundy.core.GameState.PlayerState;
+import castlesofburgundy.player.PersonalCell;
+import castlesofburgundy.player.PersonalLayout;
 import castlesofburgundy.tile.AnimalSpecies;
 import castlesofburgundy.tile.AnimalTile;
 import castlesofburgundy.tile.Tile;
@@ -19,9 +21,8 @@ public final class PlayerConsoleView {
     private static final String EMPTY = " ".repeat(CELL_W);
     private static final String GAP = " ";        // 셀 간 간격
 
-    public static String render(Player player) {
-        PersonalBoard board = player.getBoard();
-        PersonalLayout layout = board.getLayout();
+    public static String render(PlayerState player) {
+        PersonalLayout layout = player.layout();
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Personal Board ===\n");
 
@@ -42,8 +43,8 @@ public final class PlayerConsoleView {
                     continue;
                 }
 
-                boolean placed = board.isOccupied(id);
-                String inner = board.getPlacedTile(id)
+                boolean placed = player.placedAt(id).isPresent();
+                String inner = player.placedAt(id)
                         .map(tile -> cellInner(cell, tile))
                         .orElseGet(() -> cell.id() + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die());
                 sb.append(box(inner, cell.type(), placed)).append(GAP);
@@ -55,12 +56,12 @@ public final class PlayerConsoleView {
         if (COLORIZE) sb.append(AsciiUtils.FG_GRAY).append("(색상=타입 배경)").append(AsciiUtils.RESET);
         sb.append("\n\n");
 
-        String s = storageView(board.getStorage());
+        String s = storageView(player.storage());
         sb.append(s);
 
-        sb.append("\n일꾼 수: ").append(player.getWorkers())
-                .append(", 은화 수: ").append(player.getSilver())
-                .append(", 점수: ").append(player.getScore())
+        sb.append("\n일꾼 수: ").append(player.workers())
+                .append(", 은화 수: ").append(player.silver())
+                .append(", 점수: ").append(player.score())
                 .append("\n");
 
         return sb.toString();
@@ -74,11 +75,10 @@ public final class PlayerConsoleView {
         return (placed ? "(" : "[") + padded + (placed ? ")" : "]");
     }
 
-    private static String storageView(Storage storage) {
+    private static String storageView(List<Tile> tiles) {
         StringBuilder sb = new StringBuilder();
         sb.append("=== Storage ===\n");
 
-        List<Tile> tiles = storage.view();
         if (tiles.isEmpty()) {
             sb.append("(empty)\n");
             return sb.toString();
@@ -120,8 +120,8 @@ public final class PlayerConsoleView {
         };
     }
 
-    public static String renderBoardOnly(PersonalBoard board) {
-        PersonalLayout layout = board.getLayout();
+    public static String renderBoardOnly(PlayerState player) {
+        PersonalLayout layout = player.layout();
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Personal Board ===\n");
 
@@ -137,9 +137,9 @@ public final class PlayerConsoleView {
                 }
 
                 PersonalCell cell = layout.get(id);
-                boolean placed = board.isOccupied(id);
+                boolean placed = player.placedAt(id).isPresent();
 
-                String inner = board.getPlacedTile(id)
+                String inner = player.placedAt(id)
                         .map(tile -> cellInner(cell, tile))
                         .orElseGet(() -> id + ":" + AsciiUtils.shortType(cell.type()) + "/" + cell.die());
                 sb.append(box(inner, cell.type(), placed)).append(" ");

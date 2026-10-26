@@ -13,7 +13,7 @@ import java.util.Set;
  * @param regionScore         완성으로 얻은 점수(이미 player에 가산됨)
  * @param followUp            배치 직후 플레이어 선택이 필요한 효과
  */
-public record PlacementOutcome(
+record PlacementOutcome(
         boolean grantsExtraAction,
         int completedRegionSize,
         int regionScore,

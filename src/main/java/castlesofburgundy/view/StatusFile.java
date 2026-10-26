@@ -1,8 +1,9 @@
 package castlesofburgundy.view;
 
+import castlesofburgundy.core.ActionOption;
 import castlesofburgundy.core.Decision;
-import castlesofburgundy.core.Game;
-import castlesofburgundy.player.Player;
+import castlesofburgundy.core.GameState;
+import castlesofburgundy.core.GameState.PlayerState;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,34 +27,34 @@ final class StatusFile {
         return path;
     }
 
-    void write(Game game) throws IOException {
+    void write(GameState state, Decision pending, List<ActionOption> options) throws IOException {
         Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
-        Files.writeString(tmp, render(game), StandardCharsets.UTF_8);
+        Files.writeString(tmp, render(state, pending, options), StandardCharsets.UTF_8);
         Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
     }
 
-    static String render(Game game) {
+    static String render(GameState state, Decision pending, List<ActionOption> options) {
         StringBuilder sb = new StringBuilder();
-        List<Player> order = game.board().turnOrder().currentOrder();
-        if (game.isOver()) {
+        List<PlayerState> order = state.turnOrder().stream().map(state::player).toList();
+        if (state.isOver()) {
             sb.append("=== 게임 종료 ===\n");
         } else {
-            sb.append("=== Phase ").append(game.phase()).append(" / Round ").append(game.round())
-                    .append(" · 차례: ").append(game.currentPlayer().getName()).append(" ===\n");
+            sb.append("=== Phase ").append(state.phase()).append(" / Round ").append(state.round())
+                    .append(" · 차례: ").append(state.current().name()).append(" ===\n");
         }
-        sb.append("턴 순서: ").append(String.join(" → ", order.stream().map(Player::getName).toList())).append("\n\n");
+        sb.append("턴 순서: ").append(String.join(" → ", order.stream().map(PlayerState::name).toList())).append("\n\n");
 
-        sb.append(GameBoardConsoleView.render(game.board()));
+        sb.append(GameBoardConsoleView.render(state.board()));
 
-        for (Player player : order) {
-            sb.append("\n\n--- ").append(player.getName()).append(" ---");
+        for (PlayerState player : order) {
+            sb.append("\n\n--- ").append(player.name()).append(" ---");
             sb.append(PlayerConsoleView.render(player));
         }
 
-        if (game.pending() instanceof Decision.ChooseDieAction d) {
-            sb.append("\n--- ").append(game.currentPlayer().getName())
+        if (pending instanceof Decision.ChooseDieAction d) {
+            sb.append("\n--- ").append(state.current().name())
                     .append("의 주사위 ").append(d.die()).append(" ---\n");
-            sb.append(TurnContextView.render(game, d.die()));
+            sb.append(TurnContextView.render(state, options));
         }
         return sb.toString();
     }

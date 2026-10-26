@@ -30,7 +30,10 @@ import castlesofburgundy.tile.Tile;
 import castlesofburgundy.tile.TileType;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -115,32 +118,96 @@ public final class Game {
         return pending instanceof GameOver;
     }
 
+    // 아래 조회들은 실제 객체를 돌려주므로 패키지 안(테스트 포함)에서만 쓴다. 바깥은 state()를 읽는다.
+
     /** 자리 순서(시작 플레이어부터). 턴 순서는 board().turnOrder(). */
-    public List<Player> players() {
+    List<Player> players() {
         return players;
     }
 
-    public GameBoard board() {
+    GameBoard board() {
         return ctx.board();
     }
 
-    public Player currentPlayer() {
+    Player currentPlayer() {
         if (isOver()) {
             throw new IllegalStateException("게임이 끝났습니다.");
         }
         return roundOrder.get(currentIndex);
     }
 
-    public Phase phase() {
+    Phase phase() {
         return phase;
     }
 
-    public int round() {
+    int round() {
         return round;
     }
 
-    public int scoreForSelling(int count) {
-        return actions.scoreForSelling(count);
+    /** 지금 상태의 읽기 전용 스냅샷. */
+    public GameState state() {
+        List<GameState.PlayerState> playerStates = new ArrayList<>();
+        for (int seat = 0; seat < players.size(); seat++) {
+            playerStates.add(playerState(seat, players.get(seat)));
+        }
+        List<Integer> order = board().turnOrder().currentOrder().stream().map(this::seatOf).toList();
+        int currentSeat = isOver() ? -1 : seatOf(currentPlayer());
+        return new GameState(phase, round, currentSeat, order, List.copyOf(playerStates), boardState());
+    }
+
+    private GameState.PlayerState playerState(int seat, Player player) {
+        PersonalBoard board = player.getBoard();
+        Map<GoodsColor, Integer> goods = new EnumMap<>(GoodsColor.class);
+        for (GoodsColor color : GoodsColor.values()) {
+            int count = board.getGoods().count(color);
+            if (count > 0) {
+                goods.put(color, count);
+            }
+        }
+        return new GameState.PlayerState(seat, player.getName(), player.getWorkers(), player.getSilver(), player.getScore(),
+                board.getStorage().view(), Collections.unmodifiableMap(goods), board.getLayout(), board.placedTiles());
+    }
+
+    private GameState.BoardState boardState() {
+        List<GameState.DepotState> depots = new ArrayList<>();
+        for (Depot depot : board().depots()) {
+            List<GameState.SlotState> slots = new ArrayList<>();
+            for (int slot = 0; slot < depot.slotCount(); slot++) {
+                slots.add(new GameState.SlotState(depot.slotType(slot), depot.tileAt(slot).orElse(null)));
+            }
+            depots.add(new GameState.DepotState(depot.number(), List.copyOf(slots), depot.goods()));
+        }
+        return new GameState.BoardState(List.copyOf(depots), board().centralMarket());
+    }
+
+    private int seatOf(Player player) {
+        return players.indexOf(player);
+    }
+
+    /** 지금 낼 수 있는 명령과 각각의 비용·즉시 이득. 순서는 화면의 메뉴 순서다. */
+    public List<ActionOption> options() {
+        return availableActions().stream().map(this::option).toList();
+    }
+
+    private ActionOption option(Command command) {
+        Player player = currentPlayer();
+        return switch (command) {
+            case TakeTile t -> new ActionOption(command, workersFor(t.targetDie()), 0, 0, 0);
+            case PlaceTile p -> {
+                PlayerActions.Gain gain = actions.previewPlacement(player, p.storageIndex(), p.cellId(), phase);
+                yield new ActionOption(command, workersFor(p.targetDie()), 0, gain.score(), gain.silver());
+            }
+            case SellGoods s -> {
+                PlayerActions.Gain gain = actions.previewSale(player, GoodsColor.forDie(s.targetDie()));
+                yield new ActionOption(command, workersFor(s.targetDie()), 0, gain.score(), gain.silver());
+            }
+            case ChooseGoodsColor c -> {
+                PlayerActions.Gain gain = actions.previewSale(player, c.color());
+                yield new ActionOption(command, 0, 0, gain.score(), gain.silver());
+            }
+            case BuyCentralMarket b -> new ActionOption(command, 0, CENTRAL_MARKET_COST, 0, 0);
+            default -> new ActionOption(command, 0, 0, 0, 0);
+        };
     }
 
     /** 마지막으로 읽은 뒤 일어난 일을 순서대로 돌려주고 비운다. */
@@ -151,7 +218,7 @@ public final class Game {
     }
 
     /** 주사위 눈 from을 to로 바꾸는 데 드는 일꾼 수(1↔6을 잇는 원형 거리). */
-    public static int workerCost(int from, int to) {
+    static int workerCost(int from, int to) {
         int distance = Math.abs(from - to);
         return Math.min(distance, 6 - distance);
     }
@@ -159,7 +226,7 @@ public final class Game {
     /**
      * 일꾼 workers개 이하로 만들 수 있는 눈을 메뉴 순서(그대로, -1, +1, -2, +2, -3)로 돌려준다.
      */
-    public static List<Integer> reachableDice(int baseDie, int workers) {
+    static List<Integer> reachableDice(int baseDie, int workers) {
         List<Integer> dice = new ArrayList<>();
         dice.add(baseDie);
         int max = Math.min(MAX_WORKERS_PER_DIE, workers);
@@ -177,8 +244,8 @@ public final class Game {
         return ((face - 1 + delta) % 6 + 6) % 6 + 1;
     }
 
-    /** 지금 낼 수 있는 명령 전부. 순서는 화면의 메뉴 순서다. */
-    public List<Command> availableActions() {
+    /** 지금 낼 수 있는 명령 전부(options()의 명령과 같은 순서). apply가 이 목록으로 검증한다. */
+    List<Command> availableActions() {
         return switch (pending) {
             case ChooseDie d -> d.remainingDice().stream().distinct().<Command>map(UseDie::new).toList();
             case ChooseDieAction d -> dieActions(d.die());
@@ -327,8 +394,9 @@ public final class Game {
             }
             case SellGoods s -> {
                 GoodsColor color = GoodsColor.forDie(s.targetDie());
+                PlayerActions.Gain sale = actions.previewSale(player, color);
                 int sold = actions.sellGoods(player, workersFor(s.targetDie()), color);
-                events.add(new GameEvent.GoodsSold(player, color, sold, actions.scoreForSelling(sold), false));
+                events.add(new GameEvent.GoodsSold(seatOf(player), color, sold, sale.score(), false));
                 completeAction(false);
             }
             case TakeWorkers t -> {
@@ -354,7 +422,7 @@ public final class Game {
             }
             case ChooseDepotGoods c -> {
                 PlayerActions.ShipGoods taken = actions.takeShipGoods(player, c.depot());
-                events.add(new GameEvent.ShipGoodsTaken(player, c.depot(), taken.stored(), taken.dropped()));
+                events.add(new GameEvent.ShipGoodsTaken(seatOf(player), c.depot(), taken.stored(), taken.dropped()));
                 advanceTurnOrder(player);
                 finishPlacement();
             }
@@ -368,8 +436,9 @@ public final class Game {
                 finishPlacement();
             }
             case ChooseGoodsColor c -> {
+                PlayerActions.Gain sale = actions.previewSale(player, c.color());
                 int sold = actions.sellGoods(player, 0, c.color());
-                events.add(new GameEvent.GoodsSold(player, c.color(), sold, actions.scoreForSelling(sold), true));
+                events.add(new GameEvent.GoodsSold(seatOf(player), c.color(), sold, sale.score(), true));
                 finishPlacement();
             }
         }
@@ -386,14 +455,14 @@ public final class Game {
     private void handlePlacement(Player player, PlacementOutcome outcome) {
         deferredExtraAction = outcome.grantsExtraAction();
         deferredRegion = outcome.completedRegionSize() > 0
-                ? new GameEvent.RegionCompleted(player, outcome.completedRegionSize(), outcome.regionScore(), phase)
+                ? new GameEvent.RegionCompleted(seatOf(player), outcome.completedRegionSize(), outcome.regionScore(), phase)
                 : null;
 
         switch (outcome.followUp()) {
             case PlacementOutcome.FollowUp.None n -> finishPlacement();
             case PlacementOutcome.FollowUp.ShipGoods s -> {
                 if (actions.depotsWithGoods().isEmpty()) {
-                    events.add(new GameEvent.ShipFoundNoGoods(player));
+                    events.add(new GameEvent.ShipFoundNoGoods(seatOf(player)));
                     advanceTurnOrder(player);
                     finishPlacement();
                 } else {
@@ -421,7 +490,7 @@ public final class Game {
 
     private void advanceTurnOrder(Player player) {
         actions.advanceTurnOrder(player);
-        events.add(new GameEvent.TurnOrderAdvanced(player));
+        events.add(new GameEvent.TurnOrderAdvanced(seatOf(player)));
     }
 
     /** 배치와 그 후속 선택이 모두 끝났다. 구역 완성은 효과 서술 뒤에 알린다. */
@@ -442,7 +511,7 @@ public final class Game {
                 pending = new ChooseCastleAction();
                 return;
             }
-            events.add(new GameEvent.CastleActionUnavailable(currentPlayer()));
+            events.add(new GameEvent.CastleActionUnavailable(seatOf(currentPlayer())));
         }
         continueTurn();
     }
@@ -510,7 +579,7 @@ public final class Game {
         Player player = roundOrder.get(currentIndex);
         int d1 = ctx.dice().roll();
         int d2 = ctx.dice().roll();
-        events.add(new GameEvent.TurnStarted(player, d1, d2));
+        events.add(new GameEvent.TurnStarted(seatOf(player), d1, d2));
 
         turn = new Turn(d1, d2);
         actionNumber = 1;
@@ -523,7 +592,7 @@ public final class Game {
             int mines = player.getBoard().countPlacedOfType(TileType.MINE);
             if (mines > 0) {
                 player.addSilver(mines);
-                events.add(new GameEvent.MinesPaid(player, mines));
+                events.add(new GameEvent.MinesPaid(seatOf(player), mines));
             }
         }
         events.add(new GameEvent.PhaseEnded(phase));

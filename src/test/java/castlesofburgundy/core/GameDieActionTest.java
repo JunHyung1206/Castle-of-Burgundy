@@ -106,7 +106,7 @@ class GameDieActionTest {
         assertThat(p1.getBoard().getGoods().count(GoodsColor.RED)).isZero();
         assertThat(p1.getSilver()).isEqualTo(1);
         assertThat(p1.getScore()).isEqualTo(6);
-        assertThat(game.drainEvents()).first().isEqualTo(new GameEvent.GoodsSold(p1, GoodsColor.RED, 2, 6, false));
+        assertThat(game.drainEvents()).first().isEqualTo(new GameEvent.GoodsSold(0, GoodsColor.RED, 2, 6, false));
     }
 
     @Test

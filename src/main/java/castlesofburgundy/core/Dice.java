@@ -4,7 +4,7 @@ package castlesofburgundy.core;
 import java.util.Random;
 import java.util.function.IntSupplier;
 
-public final class Dice {
+final class Dice {
     private final IntSupplier rolls;
 
     public Dice() {

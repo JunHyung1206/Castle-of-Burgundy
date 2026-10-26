@@ -1,7 +1,6 @@
 package castlesofburgundy.view;
 
-import castlesofburgundy.board.Depot;
-import castlesofburgundy.board.GameBoard;
+import castlesofburgundy.core.GameState;
 import castlesofburgundy.tile.Tile;
 
 import java.util.*;
@@ -49,13 +48,13 @@ public final class GameBoardConsoleView {
                     """;
 
 
-    public static String render(GameBoard board) {
+    public static String render(GameState.BoardState board) {
         StringBuilder sb = new StringBuilder();
         sb.append("=== Market Board  ===\n");
 
         // 섹션 박스 생성
         List<List<String>> boxes = new ArrayList<>();
-        for (Depot depot : board.depots()) {
+        for (GameState.DepotState depot : board.depots()) {
             boxes.add(renderSectionBox(depot));
         }
 
@@ -73,14 +72,14 @@ public final class GameBoardConsoleView {
         return sb.toString();
     }
 
-    private static List<String> renderSectionBox(Depot depot) {
+    private static List<String> renderSectionBox(GameState.DepotState depot) {
         List<String> out = new ArrayList<>();
         String border = "+---+------------+";
         out.add(padRight(border, BOX_W));
         out.add(padRight("|idx|  placed    |", BOX_W));
         out.add(padRight(border, BOX_W));
 
-        for (int i = 0; i < depot.slotCount(); i++) {
+        for (int i = 0; i < depot.slots().size(); i++) {
 
             String idx = String.format("%3d", i);
             String placedStr;

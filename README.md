@@ -124,11 +124,13 @@ castlesofburgundy
   │  ├─ Game.java                  # 게임 상태 기계: 진행 위치·대기 중인 선택을 갖고 명령을 검증·적용해 다음 입력까지 진행
   │  ├─ Decision.java              # 지금 기다리는 입력의 종류(주사위 고르기, 행동, 성 추가 행동, 배·건물 효과 대상, 턴 끝 구매)
   │  ├─ Command.java               # 플레이어가 내는 명령(데이터). Game.availableActions()에 있는 것만 받아들인다
-  │  ├─ GameEvent.java             # 명령으로 일어난 일. 문장으로 바꾸는 것은 화면의 몫
-  │  ├─ GameContext.java           # 공용 보드, 타일·상품 공급, 주사위 묶음
+  │  ├─ GameEvent.java             # 명령으로 일어난 일(플레이어는 자리 번호). 문장으로 바꾸는 것은 화면의 몫
+  │  ├─ GameState.java             # 바깥이 읽는 유일한 상태: 읽기 전용 스냅샷(플레이어·보드)
+  │  ├─ ActionOption.java          # 지금 낼 수 있는 명령 + 일꾼·은화 비용 + 즉시 얻는 점수·은화
+  │  ├─ GameContext.java           # (core 내부) 공용 보드, 타일·상품 공급, 주사위 묶음
   │  ├─ Phase.java                 # 페이즈(A~E) enum
   │  ├─ Turn.java                  # 한 턴 동안의 상태(남은 주사위, 중앙 시장 구매 여부)
-  │  ├─ PlayerActions.java         # 플레이어·개인 보드·공용 보드를 함께 바꾸는 액션(검증→차감→이동→효과)
+  │  ├─ PlayerActions.java         # (core 내부) 플레이어·개인 보드·공용 보드를 함께 바꾸는 액션(검증→차감→이동→효과)
   │  ├─ TileSupplier.java          # 타입별 타일 풀 관리 + 무작위 공급
   │  └─ PlacementOutcome.java      # 배치 결과(구역 완성/추가 행동/선택이 필요한 후속 효과)
   │
